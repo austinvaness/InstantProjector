@@ -1,0 +1,497 @@
+﻿using EmptyKeys.UserInterface.Generated.PlayerTradeView_Bindings;
+using Sandbox.Common.ObjectBuilders;
+using Sandbox.Definitions;
+using Sandbox.Game.Entities;
+using Sandbox.Game.Entities.Cube;
+using Sandbox.Game.GUI;
+using Sandbox.Graphics.GUI;
+using Sandbox.ModAPI;
+using Sandbox.ModAPI.Interfaces;
+using Sandbox.ModAPI.Interfaces.Terminal;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using VRage;
+using VRage.Game;
+using VRage.Game.Components;
+using VRage.Game.Entity;
+using VRage.Game.ModAPI;
+using VRage.Game.ObjectBuilders.Definitions;
+using VRage.Game.ObjectBuilders.Definitions.SessionComponents;
+using VRage.ModAPI;
+using VRage.ObjectBuilders;
+using VRage.Utils;
+using VRageMath;
+
+namespace GridSpawner
+{
+    [MyEntityComponentDescriptor(typeof(MyObjectBuilder_Projector), false, "SmallProjector", "LargeProjector")]
+    public class InstantProjector : MyGameLogicComponent
+    {
+        enum State
+        {
+            Idle, Instant, InstantMerge, Building, Components, Other
+        }
+
+        IMyProjector me;
+        Random rand = new Random();
+        State state = State.Idle;
+
+        public override void Init (MyObjectBuilder_EntityBase objectBuilder)
+        {
+            me = Entity as IMyProjector;
+            NeedsUpdate = MyEntityUpdateEnum.BEFORE_NEXT_FRAME;
+        }
+
+        public override void Close ()
+        {
+            me.AppendingCustomInfo -= CustomInfo;
+        }
+
+        private void CustomInfo (IMyTerminalBlock block, StringBuilder sb)
+        {
+            if (state != State.Idle)
+            {
+                sb.Append("Building ship...").AppendLine();
+                switch (state)
+                {
+                    case State.Components:
+                        sb.Append("Waiting on components.");
+                        break;
+                    case State.Other:
+                        sb.Append("Unable to build all blocks.");
+                        break;
+                }
+                sb.AppendLine();
+            }
+        }
+
+        public override void UpdateOnceBeforeFrame ()
+        {
+            ITerminalAction check = ((IMyTerminalBlock)Entity).GetActionWithName("BuildGrid");
+            if (check == null)
+            {
+                IMyTerminalControlButton btnBuild = MyAPIGateway.TerminalControls.CreateControl<IMyTerminalControlButton, IMyProjector>("BuildGrid");
+                btnBuild.Enabled = IsValid;
+                btnBuild.Visible = IsValid;
+                btnBuild.SupportsMultipleBlocks = true;
+                btnBuild.Title = MyStringId.GetOrCompute("Build Grid");
+                btnBuild.Action = Spawn;
+                MyAPIGateway.TerminalControls.AddControl<IMyProjector>(btnBuild);
+
+                IMyTerminalAction aBuild = MyAPIGateway.TerminalControls.CreateAction<IMyProjector>("BuildGrid");
+                aBuild.Enabled = IsValid;
+                aBuild.Action = Spawn;
+                aBuild.ValidForGroups = true;
+                aBuild.Name = new StringBuilder("Create Grid");
+                MyAPIGateway.TerminalControls.AddAction<IMyProjector>(aBuild);
+            }
+            me.AppendingCustomInfo += CustomInfo;
+            NeedsUpdate = MyEntityUpdateEnum.EACH_100TH_FRAME;
+            MyLog.Default.WriteLine("Init Instant Projector.");
+        }
+
+        public override void UpdateBeforeSimulation100 ()
+        {
+            if (state != State.Idle && state != State.Instant && state != State.InstantMerge && MyAPIGateway.Session != null && me.CubeGrid != null)
+                SlowSpawn();
+
+        }
+
+        private void Spawn (IMyTerminalBlock block)
+        {
+            if (MyAPIGateway.Session == null)
+                return;
+
+            IMyProjector p = block as IMyProjector;
+            if (!p.IsWorking || p.ProjectedGrid== null)
+                return;
+
+            InstantProjector gl = p.GameLogic.GetAs<InstantProjector>();
+            if (gl == null || gl.state != State.Idle)
+                return;
+            
+            if (MyAPIGateway.Session.CreativeMode)
+            {
+                //if (p.BuildableBlocksCount > 0)
+                //    gl.SlowSpawn();
+                //else
+                gl.InstantSpawn();
+            }
+            else
+            {
+                gl.SlowSpawn();
+            }
+        }
+
+        private void InstantSpawn()
+        {
+            MyObjectBuilder_CubeGrid builder;
+            Dictionary<MyDefinitionId, int> components;
+            if(TryGetGrid(me, out builder, out components))
+            {
+                //StringBuilder sb = new StringBuilder("Blueprint components:");
+                //foreach (KeyValuePair<MyDefinitionId, int> kv in components)
+                //    sb.Append(kv.Key).Append(": ").Append(kv.Value).AppendLine();
+                //MyLog.Default.WriteLine(sb.ToString());
+
+                if (me.BuildableBlocksCount > 0)
+                {
+                    state = State.InstantMerge;
+                    MyAPIGateway.Parallel.Start(() => BuildAll(builder), OnFinishInstant);
+                }
+                else
+                {
+                    state = State.Instant;
+                    MyAPIGateway.Entities.CreateFromObjectBuilderParallel(builder, true, OnFinishInstant);
+                }
+            }
+        }
+
+        private void OnFinishInstant ()
+        {
+            state = State.Idle;
+        }
+
+        private void OnFinishInstant (IMyEntity e)
+        {
+            state = State.Idle;
+        }
+
+        private void SlowSpawn()
+        {
+            IMyCubeGrid grid = me.ProjectedGrid;
+            if(grid == null)
+            {
+                this.state = State.Idle;
+                me.RefreshCustomInfo();
+                return;
+            }
+
+            List<IMyInventory> allInventories = new List<IMyInventory>();
+            List<IMySlimBlock> temp = new List<IMySlimBlock>(0);
+            me.CubeGrid.GetBlocks(temp, (s) =>
+            {
+                if (s.FatBlock != null)
+                    for (int i = 0; i < s.FatBlock.InventoryCount; i++)
+                        allInventories.Add(s.FatBlock.GetInventory(i));
+                return false;
+            });
+
+            List<IMySlimBlock> blocks = new List<IMySlimBlock>();
+            grid.GetBlocks(blocks, CanBuild);
+            bool blockPlaced = false;
+            
+            foreach(IMySlimBlock b in blocks)
+            {
+                MyCubeBlockDefinition def = b.BlockDefinition as MyCubeBlockDefinition;
+                if(def != null)
+                {
+                    if(MyAPIGateway.Session.CreativeMode)
+                    {
+                        me.Build(b, me.OwnerId, me.OwnerId, true);
+                    }
+                    else
+                    {
+                        if(ConsumeComponents(allInventories, def))
+                        {
+                            me.Build(b, me.OwnerId, me.OwnerId, false);
+                            blockPlaced = true;
+                        }
+                    }
+                }
+            }
+            if (me.RemainingBlocks == 0)
+                state = State.Idle;
+            else if (blockPlaced)
+                state = State.Building;
+            else if (blocks.Count > 0)
+                state = State.Components;
+            else
+                state = State.Other;
+            me.RefreshCustomInfo();
+        }
+
+        private void BuildAll(MyObjectBuilder_CubeGrid grid)
+        {
+            MyObjectBuilder_CubeBlock [] cubes = grid.CubeBlocks.ToArray();
+            foreach (MyObjectBuilder_CubeBlock cube in cubes)
+                Build(cube);
+        }
+
+        private void Build(MyObjectBuilder_CubeBlock cube)
+        {
+            IMySlimBlock original = me.ProjectedGrid.GetCubeBlock(cube.Min);
+            IMyCubeGrid myCubeGrid = me.CubeGrid;
+            Vector3I min = myCubeGrid.WorldToGridInteger(me.ProjectedGrid.GridIntegerToWorld(cube.Min));
+            cube.Min = min;
+
+            if (me.CubeGrid.CubeExists(cube.Min))
+                return;
+
+            Quaternion myQuat;
+            me.Orientation.GetQuaternion(out myQuat);
+            Quaternion projectedQuat;
+            original.Orientation.GetQuaternion(out projectedQuat);
+            projectedQuat = Quaternion.Multiply(ProjectionRotationQuaternion, projectedQuat);
+            projectedQuat = Quaternion.Multiply(myQuat, projectedQuat);
+            cube.BlockOrientation = new SerializableBlockOrientation(ref projectedQuat);
+
+            Vector3I max;
+            ComputeMax((MyCubeBlockDefinition)original.BlockDefinition, cube.BlockOrientation, ref min, out max);
+            if (me.CubeGrid.CanAddCubes(min, max))
+                me.CubeGrid.AddBlock(cube, false);
+        }
+
+        public static void ComputeMax (MyCubeBlockDefinition definition, MyBlockOrientation orientation,
+            ref Vector3I min, out Vector3I max)
+        {
+            Vector3I size = definition.Size - 1;
+            MatrixI matrix = new MatrixI(orientation);
+            Vector3I.TransformNormal(ref size, ref matrix, out size);
+            Vector3I.Abs(ref size, out size);
+            max = min + size;
+        }
+
+
+        public Quaternion ProjectionRotationQuaternion
+        {
+            get
+            {
+                var def = (MyProjectorDefinition)MyDefinitionManager.Static.GetCubeBlockDefinition(me.BlockDefinition);
+
+                Vector3 vector3 = me.ProjectionRotation * MathHelper.ToRadians(def.RotationAngleStepDeg);
+                return Quaternion.CreateFromYawPitchRoll(vector3.X, vector3.Y, vector3.Z);
+            }
+        }
+
+        /// <summary>
+        /// Attempts to consume a number of components from the inventory.
+        /// </summary>
+        /// <param name="id">The component to consume.</param>
+        /// <param name="amount">The amount to consume.</param>
+        /// <returns>The number of components that were unavailable.</returns>
+        private bool ConsumeComponents(List<IMyInventory> inventories, MyCubeBlockDefinition block)
+        {
+            List<MyTuple<IMyInventory, IMyInventoryItem, MyFixedPoint>> toRemove = new List<MyTuple<IMyInventory, IMyInventoryItem, MyFixedPoint>>();
+            foreach (MyCubeBlockDefinition.Component c in block.Components)
+            {
+                SerializableDefinitionId itemDef = new SerializableDefinitionId(c.Definition.Id.TypeId, c.Definition.Id.SubtypeName);
+                MyFixedPoint targetAmount = c.Count;
+                foreach (IMyInventory inv in inventories)
+                {
+                    IMyInventoryItem invItem = inv.FindItem(itemDef);
+                    if (invItem != null)
+                    {
+                        if (invItem.Amount >= targetAmount)
+                        {
+                            toRemove.Add(new MyTuple<IMyInventory, IMyInventoryItem, MyFixedPoint>(inv, invItem, targetAmount));
+                            targetAmount = 0;
+                            break;
+                        }
+                        else
+                        {
+                            toRemove.Add(new MyTuple<IMyInventory, IMyInventoryItem, MyFixedPoint>(inv, invItem, invItem.Amount));
+                            targetAmount -= invItem.Amount;
+                        }
+                    }
+                }
+                if (targetAmount > 0)
+                    return false;
+            }
+
+            foreach (MyTuple<IMyInventory, IMyInventoryItem, MyFixedPoint> item in toRemove)
+                item.Item1.RemoveItemAmount(item.Item2, item.Item3);
+
+            return true;
+        }
+
+        private bool CanBuild (IMySlimBlock slim)
+        {
+            return me.CanBuild(slim, true) == BuildCheckResult.OK;
+        }
+
+        private void GetComponents (MyCubeBlockDefinition def, Dictionary<MyDefinitionId, int> components)
+        {
+            foreach (MyCubeBlockDefinition.Component c in def.Components)
+            {
+                MyDefinitionId id = c.Definition.Id;
+                int num;
+                if (components.TryGetValue(id, out num))
+                    components [id] = num + c.Count;
+                else
+                    components.Add(id, c.Count);
+            }
+        }
+
+
+        private bool TryGetGrid(IMyProjector p, out MyObjectBuilder_CubeGrid builder, out Dictionary<MyDefinitionId, int> components)
+        {
+            builder = null;
+            components = new Dictionary<MyDefinitionId, int>();
+
+            IMyCubeGrid grid = p.ProjectedGrid;
+            if (grid == null)
+                return false;
+
+            builder = (MyObjectBuilder_CubeGrid)grid.GetObjectBuilder(true);
+
+            if (!builder.PositionAndOrientation.HasValue || !NextEntityId(out builder.EntityId))
+                return false;
+            builder.CreatePhysics = true;
+
+            foreach (MyObjectBuilder_CubeBlock cubeBuilder in builder.CubeBlocks)
+            {
+                if (MyDefinitionManagerBase.Static != null)
+                {
+                    if (!NextEntityId(out cubeBuilder.EntityId))
+                        return false;
+
+                    cubeBuilder.SetupForProjector();
+
+                    MyCubeBlockDefinition def = MyDefinitionManager.Static.GetCubeBlockDefinition(cubeBuilder);
+                    GetComponents(def, components);
+
+                    cubeBuilder.Owner = p.OwnerId;
+                    cubeBuilder.BuiltBy = p.OwnerId;
+                    cubeBuilder.ShareMode = ((MyCubeBlock)p).IDModule.ShareMode;
+                    if (cubeBuilder is MyObjectBuilder_FunctionalBlock)
+                        ((MyObjectBuilder_FunctionalBlock)cubeBuilder).Enabled = true;
+                    if (cubeBuilder is MyObjectBuilder_BatteryBlock)
+                    {
+                        MyBatteryBlockDefinition batDef = (MyBatteryBlockDefinition)def;
+                        ((MyObjectBuilder_BatteryBlock)cubeBuilder).CurrentStoredPower = batDef.InitialStoredPowerRatio * batDef.MaxStoredPower;
+                    }
+                }
+            }
+
+            return FindFreePlace(builder, grid);
+        }
+
+        private bool FindFreePlace(MyObjectBuilder_CubeGrid builder, IMyCubeGrid projection)
+        {
+            if(!HasClearArea(projection))
+            {
+                return false;
+                MyPositionAndOrientation pos = builder.PositionAndOrientation.Value;
+                Vector3D? result = MyAPIGateway.Entities.FindFreePlace(pos.Position, projection.LocalVolume.Radius, 10, 2, 1);
+                if (result.HasValue)
+                {
+                    if(result.Value != pos.Position)
+                        builder.PositionAndOrientation = new MyPositionAndOrientation(result.Value, pos.Forward, pos.Up);
+                    return true;
+                }
+                return false;
+            }
+            return true;
+        }
+
+        private bool HasClearArea(IMyEntity e)
+        {
+            List<MyEntity> entities = new List<MyEntity>();
+            MyOrientedBoundingBoxD eObb = GetOBB(e);
+            MyGamePruningStructure.GetAllEntitiesInOBB(ref eObb, entities);
+            if (entities.Count > 0)
+            {
+                foreach (MyEntity entity in entities)
+                {
+                    IMyEntity e2 = entity;
+                    if (e2.EntityId != e.EntityId && e2.Physics != null)
+                    {
+                        if (e2 is IMyCubeGrid)
+                            return !HasBlocksInsideOBB((MyCubeGrid)e2, ref eObb);
+
+                        if (e2 is MyVoxelBase)
+                        {
+                            MyTuple<float, float> result = ((MyVoxelBase)e2).GetVoxelContentInBoundingBox_Fast(e.LocalAABB, e.WorldMatrix);
+                            return float.IsNaN(result.Item2) || float.IsInfinity(result.Item2) || result.Item2 == 0;
+                        }
+
+                        MyOrientedBoundingBoxD obb = GetOBB(e);
+                        return eObb.Contains(ref obb) == ContainmentType.Disjoint;
+                    }
+                }
+            }
+            return true;
+        }
+
+        /* u can use that to find free space inside a grid
+         * if it finds any blocks its not free
+         * 
+         * he can just replace the block.Add part with an obb check
+         * make the sphere be inclusive of obb shape
+         */
+        public static bool HasBlocksInsideOBB (MyCubeGrid grid, ref MyOrientedBoundingBoxD box)
+        {
+            double radius = box.HalfExtent.Length();
+            radius *= grid.GridSizeR;
+            Vector3I center = grid.WorldToGridInteger(box.Center);
+            Vector3I gridMin = grid.Min;
+            Vector3I gridMax = grid.Max;
+            double radiusSq = radius * radius;
+            int radiusCeil = (int)Math.Ceiling(radius);
+            int x, y, z;
+            Vector3I max2 = Vector3I.Min(new Vector3I (radiusCeil), gridMax - center);
+            Vector3I min2 = Vector3I.Max(new Vector3I (-radiusCeil), gridMin - center);
+            for (x = min2.X; x <= max2.X; ++x)
+            {
+                for (y = min2.Y; y <= max2.Y; ++y)
+                {
+                    for (z = min2.Z; z <= max2.Z; ++z)
+                    {
+                        if (x * x + y * y + z * z < radiusSq)
+                        {
+                            Vector3I cubePos = center + new Vector3I(x, y, z);
+                            MyCube cube;
+                            if (grid.TryGetCube(cubePos, out cube))
+                            {
+                                IMySlimBlock slim = (IMySlimBlock)cube.CubeBlock;
+                                if (slim.Position == cubePos)
+                                {
+                                    Vector3D v = grid.GridIntegerToWorld(cubePos);
+                                    if (box.Contains(ref v))
+                                        return true;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            return false;
+        }
+
+        //https://github.com/rexxar-tc/ShipyardMod/blob/master/ShipyardMod/Utility/MathUtility.cs#L66
+        private MyOrientedBoundingBoxD GetOBB (IMyEntity e)
+        {
+            Quaternion quat = Quaternion.CreateFromRotationMatrix(e.WorldMatrix);
+            Vector3D exts = e.PositionComp.LocalAABB.HalfExtents;
+            return new MyOrientedBoundingBoxD(e.PositionComp.WorldAABB.Center, exts, quat);
+        }
+
+        private long NextLong()
+        {
+            byte [] bytes = new byte [8];
+            rand.NextBytes(bytes);
+            return BitConverter.ToInt64(bytes, 0);
+        }
+
+        private bool NextEntityId(out long id)
+        {
+            for(int i = 0; i < 100; i++)
+            {
+                id = NextLong();
+                if (!MyAPIGateway.Entities.EntityExists(id))
+                    return true;
+            }
+            id = 0;
+            return false;
+        }
+
+        private bool IsValid (IMyTerminalBlock block)
+        {
+            return block.CubeGrid?.Physics != null && block.GameLogic.GetAs<InstantProjector>() != null;
+        }
+    }
+}
