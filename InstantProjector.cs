@@ -1,11 +1,8 @@
-﻿using BulletXNA.BulletCollision;
+﻿using GridSpawner.Networking;
 using Sandbox.Common.ObjectBuilders;
 using Sandbox.Definitions;
-using Sandbox.Game;
 using Sandbox.Game.Entities;
-using Sandbox.Game.Entities.Cube;
 using Sandbox.ModAPI;
-using Sandbox.ModAPI.Interfaces;
 using Sandbox.ModAPI.Interfaces.Terminal;
 using System;
 using System.Collections.Generic;
@@ -16,11 +13,11 @@ using VRage.Game;
 using VRage.Game.Components;
 using VRage.Game.Entity;
 using VRage.Game.ModAPI;
-using VRage.Game.ObjectBuilders.VisualScripting;
 using VRage.ModAPI;
 using VRage.ObjectBuilders;
 using VRage.Utils;
 using VRageMath;
+using VRageRender.Messages;
 
 namespace GridSpawner
 {
@@ -36,30 +33,30 @@ namespace GridSpawner
 
         private IMyProjector me;
 
-        private Sync<float> _timeout;
-        private float Timeout
+        private SyncableProjectorState _state;
+
+        private int Timeout
         {
             get
             {
-                return _timeout.Value;
+                return _state.Timeout;
             }
             set
             {
-                _timeout.Value = value;
+                _state.Timeout = value;
             }
         }
 
-
-        private Sync<State> _state;
         private State BuildState
         {
             get
             {
-                return _state.Value;
+                return _state.BuildState;
             }
             set
             {
-                _state.Value = value;
+                _state.BuildState = value;
+                me.RefreshCustomInfo();
             }
         }
 
@@ -67,25 +64,38 @@ namespace GridSpawner
         public override void Init (MyObjectBuilder_EntityBase objectBuilder)
         {
             me = Entity as IMyProjector;
-            _timeout = new Sync<float>(1, me, 0);
-            _state = new Sync<State>(2, me, State.Idle);
-            _state.OnValueReceived += Sync_RefreshCustomInfo;
             NeedsUpdate = MyEntityUpdateEnum.BEFORE_NEXT_FRAME;
-        }
-
-        private void Sync_RefreshCustomInfo (byte id)
-        {
-            me.RefreshCustomInfo();
         }
 
         // Context: All
         public override void Close ()
         {
-            if(me != null)
+            if (me != null)
+            {
                 me.AppendingCustomInfo -= CustomInfo;
-            if(_state != null)
-                _state.OnValueReceived -= Sync_RefreshCustomInfo;
+                if (Timeout > 0 && me.CubeGrid != null && IPSession.Instance != null)
+                    IPSession.Instance.SetGridTimeout(me.CubeGrid, Timeout);
+                if (_state != null)
+                {
+                    _state.OnValueReceived -= ReceivedNewState;
+                    _state.Close();
+                }
+            }
 
+        }
+
+        // Context: Client
+        private void ReceivedNewState ()
+        {
+            if(_state.BuildState == State.Waiting)
+            {
+                NeedsUpdate = MyEntityUpdateEnum.EACH_FRAME;
+            }
+            else
+            {
+                Timeout = 0;
+                NeedsUpdate = MyEntityUpdateEnum.NONE;
+            }
         }
 
         // Context: All
@@ -98,7 +108,7 @@ namespace GridSpawner
             else if (BuildState == State.Waiting)
             {
                 sb.Append("Waiting for ");
-                AppendTime(sb, (int)Math.Round(Timeout));
+                AppendTime(sb, Timeout);
                 sb.AppendLine();
             }
         }
@@ -106,6 +116,27 @@ namespace GridSpawner
         // Context: All
         public override void UpdateOnceBeforeFrame ()
         {
+            me.AppendingCustomInfo += CustomInfo;
+            _state = new SyncableProjectorState(0, me, State.Idle, 0);
+            if (Constants.IsServer)
+            {
+                Timeout = IPSession.Instance.GetGridTimeout(me.CubeGrid);
+                if (Timeout > 0)
+                {
+                    BuildState = State.Waiting;
+                    NeedsUpdate = MyEntityUpdateEnum.EACH_FRAME;
+                }
+                else
+                {
+                    BuildState = State.Idle;
+                }
+            }
+            else
+            {
+                _state.RequestFromServer();
+                _state.OnValueReceived += ReceivedNewState;
+            }
+
             if (!controls)
             {
                 IMyTerminalControlSeparator sep = MyAPIGateway.TerminalControls.CreateControl<IMyTerminalControlSeparator, IMyProjector>("BuildGridSep");
@@ -114,7 +145,7 @@ namespace GridSpawner
                 MyAPIGateway.TerminalControls.AddControl<IMyProjector>(sep);
 
                 IMyTerminalControlButton btnBuild = MyAPIGateway.TerminalControls.CreateControl<IMyTerminalControlButton, IMyProjector>("BuildGrid");
-                btnBuild.Enabled = CanBuildProjection;
+                btnBuild.Enabled = IsWorking;
                 btnBuild.Visible = IsValid;
                 btnBuild.SupportsMultipleBlocks = true;
                 btnBuild.Title = MyStringId.GetOrCompute("Build Grid");
@@ -132,16 +163,27 @@ namespace GridSpawner
                 txtTimeout.Tooltip = MyStringId.GetOrCompute("The amount of time you must wait after building a grid to be able to build another.");
                 MyAPIGateway.TerminalControls.AddControl<IMyProjector>(txtTimeout);
 
+                // Button panels are special and trigger on the server instead of the client, making everything more complicated.
                 IMyTerminalAction aBuild = MyAPIGateway.TerminalControls.CreateAction<IMyProjector>("BuildGridAction");
                 aBuild.Enabled = IsValid;
                 aBuild.Action = BuildClient;
                 aBuild.ValidForGroups = true;
                 aBuild.Name = new StringBuilder("Create Grid");
                 aBuild.Writer = (b, s) => s.Append("Create Grid");
+                aBuild.InvalidToolbarTypes = new [] { MyToolbarType.ButtonPanel }.ToList();
                 MyAPIGateway.TerminalControls.AddAction<IMyProjector>(aBuild);
+                IMyTerminalAction aBuild2 = MyAPIGateway.TerminalControls.CreateAction<IMyProjector>("BuildGridAction2");
+                aBuild2.Enabled = IsValid;
+                aBuild2.Action = BuildClientUnsafe;
+                aBuild2.ValidForGroups = true;
+                aBuild2.Name = new StringBuilder("Create Grid");
+                aBuild2.Writer = (b, s) => s.Append("Create Grid");
+                aBuild2.InvalidToolbarTypes = new [] { MyToolbarType.BuildCockpit, MyToolbarType.Character, MyToolbarType.LargeCockpit, 
+                    MyToolbarType.None, MyToolbarType.Seat, MyToolbarType.Ship, MyToolbarType.SmallCockpit, MyToolbarType.Spectator}.ToList(); // All except ButtonPanel
+                MyAPIGateway.TerminalControls.AddAction<IMyProjector>(aBuild2);
 
                 IMyTerminalControlListbox itemList = MyAPIGateway.TerminalControls.CreateControl<IMyTerminalControlListbox, IMyProjector>("ComponentList");
-                itemList.Enabled = CanBuildProjection;
+                itemList.Enabled = IsWorking;
                 itemList.Visible = IsValid;
                 itemList.ListContent = GetItemList;
                 itemList.Multiselect = false;
@@ -151,10 +193,28 @@ namespace GridSpawner
                 itemList.ItemSelected = (b, l) => { };
                 MyAPIGateway.TerminalControls.AddControl<IMyProjector>(itemList);
                 MyLog.Default.WriteLine("Initialized Instant Projector.");
+
+                MyLog.Default.WriteLineAndConsole("Instant Projector controls created.");
                 controls = true;
             }
 
-            me.AppendingCustomInfo += CustomInfo;
+        }
+
+        // Context: All
+        public override void UpdateBeforeSimulation ()
+        {
+            int newTimeout = --Timeout;
+            if(Constants.IsServer)
+                newTimeout = IPSession.Instance.SetGridTimeout(me.CubeGrid, newTimeout);
+            if (newTimeout <= 0)
+            {
+                newTimeout = 0;
+                if (BuildState == State.Waiting)
+                    BuildState = State.Idle;
+                NeedsUpdate = MyEntityUpdateEnum.NONE;
+            }
+            me.RefreshCustomInfo();
+            Timeout = newTimeout;
         }
 
         // Context: All
@@ -164,7 +224,8 @@ namespace GridSpawner
             InstantProjector gl = block.GameLogic.GetAs<InstantProjector>();
             if (gl.BuildState == State.Waiting)
             {
-                AppendTime(sb, (int)Math.Round(gl.Timeout));
+                AppendTime(sb, gl.Timeout);
+                sb.Append(" (Active)");
             }
             else
             {
@@ -176,17 +237,18 @@ namespace GridSpawner
         }
 
         // Context: All
-        private int GetTimeout()
+        private int GetTimeout ()
         {
             IMyCubeGrid grid = me.ProjectedGrid;
             if (grid == null)
                 return 0;
-            return (int)Math.Round(((MyCubeGrid)grid).GetBlocks().Count * Constants.timeoutMultiplier);
+            return (int)Math.Round(((MyCubeGrid)grid).GetBlocks().Count * Constants.timeoutMultiplier * 60);
         }
 
         // Context: All
-        private void AppendTime(StringBuilder sb, int totalSeconds)
+        private void AppendTime (StringBuilder sb, int ticks)
         {
+            int totalSeconds = (int)Math.Round(ticks / 60f);
             int seconds = totalSeconds % 60;
             int totalMinutes = totalSeconds / 60;
             int minutes = totalMinutes % 60;
@@ -209,31 +271,15 @@ namespace GridSpawner
             sb.Append(seconds);
         }
 
-        // Context: Server
-        public override void UpdateAfterSimulation ()
-        {
-            float newTimeout = Timeout;
-            newTimeout -= MyEngineConstants.UPDATE_STEP_SIZE_IN_SECONDS;
-            if (newTimeout <= 0)
-            {
-                newTimeout = 0;
-                if(BuildState == State.Waiting)
-                    BuildState = State.Idle;
-                NeedsUpdate = MyEntityUpdateEnum.NONE;
-            }
-            me.RefreshCustomInfo();
-            Timeout = newTimeout;
-        }
-
         // Context: All
         private void GetItemList (IMyTerminalBlock block, List<MyTerminalControlListBoxItem> items, List<MyTerminalControlListBoxItem> selected)
         {
             IMyProjector me = (IMyProjector)block;
-            if(me.ProjectedGrid != null)
+            if (me.ProjectedGrid != null)
             {
                 StringBuilder sb = new StringBuilder();
                 Dictionary<MyDefinitionId, int> comps = GetComponents(me.ProjectedGrid);
-                foreach(KeyValuePair<MyDefinitionId, int> kv in comps)
+                foreach (KeyValuePair<MyDefinitionId, int> kv in comps)
                 {
                     sb.Append(kv.Key.SubtypeName).Append(": ").Append(kv.Value);
                     MyStringId s = MyStringId.GetOrCompute(sb.ToString());
@@ -247,80 +293,108 @@ namespace GridSpawner
         // Context: All
         private void BuildClient (IMyTerminalBlock block)
         {
-            if (MyAPIGateway.Session == null)
+            if (MyAPIGateway.Session == null || !block.IsWorking)
                 return;
 
-            if (CanBuildProjection(block))
-                new PacketBuild(block).SendToServer();
-
+            new PacketBuild(block, true).SendToServer();
         }
 
-        // Context: Server
-        public void BuildServer(ulong activator)
+        // Context: All*
+        private void BuildClientUnsafe (IMyTerminalBlock block)
         {
-            InstantSpawn(!MyAPIGateway.Session.CreativeMode, activator);
+            if (MyAPIGateway.Session == null || !block.IsWorking)
+                return;
+
+            new PacketBuild(block, false).SendToServer();
         }
 
         // Context: Server
-        private void InstantSpawn(bool useComponents, ulong activator)
+        public void BuildServer (ulong activator, bool trustSender)
+        {
+            if (!trustSender && MyAPIGateway.Session.Player?.SteamUserId == activator)
+                activator = 0;
+            if (me.ProjectedGrid == null)
+                Constants.Notify(Constants.msgNoGrid, activator);
+            else if (BuildState == State.Building)
+                Constants.Notify(Constants.msgBuilding, activator);
+            else if (BuildState == State.Waiting)
+                Constants.Notify(Constants.msgWaiting, activator);
+            else
+                InstantSpawn(!MyAPIGateway.Session.CreativeMode, activator);
+        }
+
+        // Context: Server
+        private void InstantSpawn (bool useComponents, ulong activator)
         {
             MyObjectBuilder_CubeGrid builder;
             Dictionary<MyDefinitionId, int> components;
-            if(TryGetGrid(me, activator, out builder, out components))
+            if (TryGetGrid(me, activator, out builder, out components))
             {
-                if(!useComponents || ConsumeComponents(activator, GetInventories(), components))
+                if (!useComponents || ConsumeComponents(activator, GetInventories(), components))
                 {
-                    float timeout = GetTimeout();
+                    int timeout = GetTimeout();
                     BuildState = State.Building;
                     MyAPIGateway.Entities.CreateFromObjectBuilderParallel(builder, false, (e) => AddEntity(e, activator, timeout));
-                    me.RefreshCustomInfo();
                 }
             }
         }
 
         // Context: Server
-        private void AddEntity (IMyEntity e, ulong activator, float timeout)
+        private void AddEntity (IMyEntity e, ulong activator, int timeout)
         {
-            if(HasClearArea(e, activator))
+            bool clear = HasClearArea(e, activator);
+            if(clear)
                 MyAPIGateway.Entities.AddEntity(e, true);
-            if(timeout > 0)
+            if (clear && timeout > 0)
             {
-                BuildState = State.Waiting;
                 Timeout = timeout;
+                BuildState = State.Waiting;
                 NeedsUpdate = MyEntityUpdateEnum.EACH_FRAME;
             }
             else
             {
                 BuildState = State.Idle;
             }
-            me.RefreshCustomInfo();
         }
 
         // Context: Server
-        private IEnumerable<IMyInventory> GetInventories()
+        private List<IMyInventory> GetInventories ()
         {
             List<IMyCubeGrid> grids = MyAPIGateway.GridGroups.GetGroup(me.CubeGrid, GridLinkTypeEnum.Logical);
+            List<IMyInventory> inventories = new List<IMyInventory>();
+            long owner = me.OwnerId;
             foreach (IMyCubeGrid g in grids)
             {
                 MyCubeGrid grid = (MyCubeGrid)g;
                 foreach (var block in grid.GetFatBlocks())
                 {
+                    if(owner != 0)
+                    {
+                        MyRelationsBetweenPlayerAndBlock relation = block.GetUserRelationToOwner(owner);
+                        if (relation == MyRelationsBetweenPlayerAndBlock.Enemies ||
+                            relation == MyRelationsBetweenPlayerAndBlock.Neutral ||
+                            relation == MyRelationsBetweenPlayerAndBlock.NoOwnership)
+                            continue;
+                    }
+
                     for (int i = 0; i < block.InventoryCount; i++)
                     {
-                        yield return ((IMyCubeBlock)block).GetInventory(i);
+                        IMyInventory inv = ((IMyCubeBlock)block).GetInventory(i);
+                        inventories.Add(inv);
                     }
                 }
             }
+            return inventories;
         }
 
         // Context: Server
-        private bool ConsumeComponents(ulong activator, IEnumerable<IMyInventory> inventories, IDictionary<MyDefinitionId, int> components)
+        private bool ConsumeComponents (ulong activator, IEnumerable<IMyInventory> inventories, IDictionary<MyDefinitionId, int> components)
         {
             List<MyTuple<IMyInventory, IMyInventoryItem, MyFixedPoint>> toRemove = new List<MyTuple<IMyInventory, IMyInventoryItem, MyFixedPoint>>();
             foreach (KeyValuePair<MyDefinitionId, int> c in components)
             {
                 MyFixedPoint needed = CountComponents(inventories, c.Key, c.Value, toRemove);
-                if(needed > 0)
+                if (needed > 0)
                 {
                     Constants.Notify(needed + " " + c.Key.SubtypeName + Constants.msgMissingComp, activator);
                     return false;
@@ -334,7 +408,7 @@ namespace GridSpawner
         }
 
         // Context: Server
-        private MyFixedPoint CountComponents(IEnumerable<IMyInventory> inventories, MyDefinitionId id, int amount, ICollection<MyTuple<IMyInventory, IMyInventoryItem, MyFixedPoint>> items)
+        private MyFixedPoint CountComponents (IEnumerable<IMyInventory> inventories, MyDefinitionId id, int amount, ICollection<MyTuple<IMyInventory, IMyInventoryItem, MyFixedPoint>> items)
         {
             MyFixedPoint targetAmount = amount;
             foreach (IMyInventory inv in inventories)
@@ -361,7 +435,7 @@ namespace GridSpawner
         // Context: All
         private static void GetComponents (MyCubeBlockDefinition def, IDictionary<MyDefinitionId, int> components)
         {
-            if(def?.Components != null)
+            if (def?.Components != null)
             {
                 foreach (MyCubeBlockDefinition.Component c in def.Components)
                 {
@@ -389,7 +463,7 @@ namespace GridSpawner
         }
 
         // Context: Server
-        private bool TryGetGrid(IMyProjector p, ulong activator, out MyObjectBuilder_CubeGrid builder, out Dictionary<MyDefinitionId, int> components)
+        private bool TryGetGrid (IMyProjector p, ulong activator, out MyObjectBuilder_CubeGrid builder, out Dictionary<MyDefinitionId, int> components)
         {
             builder = null;
             components = new Dictionary<MyDefinitionId, int>();
@@ -412,9 +486,9 @@ namespace GridSpawner
 
             int maxBlocks = int.MinValue;
             MyObjectBuilder_CubeGrid maxGrid = null;
-            foreach(MyObjectBuilder_CubeGrid grid in pBuilder.ProjectedGrids)
+            foreach (MyObjectBuilder_CubeGrid grid in pBuilder.ProjectedGrids)
             {
-                if(grid.CubeBlocks.Count > maxBlocks)
+                if (grid.CubeBlocks.Count > maxBlocks)
                 {
                     maxBlocks = grid.CubeBlocks.Count;
                     maxGrid = grid;
@@ -433,7 +507,7 @@ namespace GridSpawner
         }
 
         // Context: Server
-        private bool PrepGrid(ulong activator, IMyProjector p, MyObjectBuilder_CubeGrid builder, Dictionary<MyDefinitionId, int> components)
+        private bool PrepGrid (ulong activator, IMyProjector p, MyObjectBuilder_CubeGrid builder, Dictionary<MyDefinitionId, int> components)
         {
             if (!builder.PositionAndOrientation.HasValue)
             {
@@ -477,7 +551,7 @@ namespace GridSpawner
         }
 
         // Context: Server
-        private bool HasClearArea(IMyEntity e, ulong activator)
+        private bool HasClearArea (IMyEntity e, ulong activator)
         {
             List<MyEntity> entities = new List<MyEntity>();
             MyOrientedBoundingBoxD eObb = GetOBB(e);
@@ -493,7 +567,7 @@ namespace GridSpawner
                         {
                             if (e is IMyCubeGrid && ((IMyCubeGrid)e2).IsSameConstructAs((IMyCubeGrid)e))
                                 continue;
-                            if(HasBlocksInsideOBB((MyCubeGrid)e2, ref eObb))
+                            if (HasBlocksInsideOBB((MyCubeGrid)e2, ref eObb))
                             {
                                 Constants.Notify(Constants.msgNoSpace, activator);
                                 return false;
@@ -533,8 +607,8 @@ namespace GridSpawner
             double radiusSq = radius * radius;
             int radiusCeil = (int)Math.Ceiling(radius);
             int x, y, z;
-            Vector3I max2 = Vector3I.Min(new Vector3I (radiusCeil), gridMax - center);
-            Vector3I min2 = Vector3I.Max(new Vector3I (-radiusCeil), gridMin - center);
+            Vector3I max2 = Vector3I.Min(new Vector3I(radiusCeil), gridMax - center);
+            Vector3I min2 = Vector3I.Max(new Vector3I(-radiusCeil), gridMin - center);
             for (x = min2.X; x <= max2.X; ++x)
             {
                 for (y = min2.Y; y <= max2.Y; ++y)
@@ -571,17 +645,11 @@ namespace GridSpawner
             return new MyOrientedBoundingBoxD(e.PositionComp.WorldAABB.Center, exts, quat);
         }
 
-        // Context: All
-        private bool CanBuildProjection (IMyTerminalBlock block)
+        private bool IsWorking (IMyTerminalBlock block)
         {
-            if (block.CubeGrid?.Physics == null || !block.IsWorking)
-                return false;
-            InstantProjector gl = block.GameLogic.GetAs<InstantProjector>();
-            if (gl == null)
-                return false;
-            return gl.me.ProjectedGrid != null && gl.BuildState == State.Idle;
+            return IsValid(block) && block.IsWorking;
         }
-        
+
         // Context: All
         private bool IsValid (IMyTerminalBlock block)
         {
