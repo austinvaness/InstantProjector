@@ -215,7 +215,6 @@ namespace GridSpawner
             }
             me.RefreshCustomInfo();
             Timeout = newTimeout;
-            NeedsUpdate |= MyEntityUpdateEnum.EACH_10TH_FRAME;
         }
 
         // Context: All
