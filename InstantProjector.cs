@@ -73,10 +73,10 @@ namespace GridSpawner
             if (me != null)
             {
                 me.AppendingCustomInfo -= CustomInfo;
-                if (Timeout > 0 && me.CubeGrid != null && IPSession.Instance != null)
-                    IPSession.Instance.SetGridTimeout(me.CubeGrid, Timeout);
                 if (_state != null)
                 {
+                    if (Timeout > 0 && me.CubeGrid != null && IPSession.Instance != null)
+                        IPSession.Instance.SetGridTimeout(me.CubeGrid, Timeout);
                     _state.OnValueReceived -= ReceivedNewState;
                     _state.Close();
                 }
@@ -199,7 +199,7 @@ namespace GridSpawner
             }
 
         }
-
+        
         // Context: All
         public override void UpdateBeforeSimulation ()
         {
@@ -215,6 +215,7 @@ namespace GridSpawner
             }
             me.RefreshCustomInfo();
             Timeout = newTimeout;
+            NeedsUpdate |= MyEntityUpdateEnum.EACH_10TH_FRAME;
         }
 
         // Context: All
@@ -371,9 +372,7 @@ namespace GridSpawner
                     if(owner != 0)
                     {
                         MyRelationsBetweenPlayerAndBlock relation = block.GetUserRelationToOwner(owner);
-                        if (relation == MyRelationsBetweenPlayerAndBlock.Enemies ||
-                            relation == MyRelationsBetweenPlayerAndBlock.Neutral ||
-                            relation == MyRelationsBetweenPlayerAndBlock.NoOwnership)
+                        if (relation == MyRelationsBetweenPlayerAndBlock.Enemies)
                             continue;
                     }
 
