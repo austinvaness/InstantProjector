@@ -166,7 +166,7 @@ namespace GridSpawner
                 // Button panels are special and trigger on the server instead of the client, making everything more complicated.
                 IMyTerminalAction aBuild = MyAPIGateway.TerminalControls.CreateAction<IMyProjector>("BuildGridAction");
                 aBuild.Enabled = IsValid;
-                aBuild.Action = BuildClient;
+                aBuild.Action = BuildClient; // For all except button panels
                 aBuild.ValidForGroups = true;
                 aBuild.Name = new StringBuilder("Create Grid");
                 aBuild.Writer = (b, s) => s.Append("Create Grid");
@@ -174,12 +174,12 @@ namespace GridSpawner
                 MyAPIGateway.TerminalControls.AddAction<IMyProjector>(aBuild);
                 IMyTerminalAction aBuild2 = MyAPIGateway.TerminalControls.CreateAction<IMyProjector>("BuildGridAction2");
                 aBuild2.Enabled = IsValid;
-                aBuild2.Action = BuildClientUnsafe;
+                aBuild2.Action = BuildClientUnsafe; // For only button panels
                 aBuild2.ValidForGroups = true;
                 aBuild2.Name = new StringBuilder("Create Grid");
                 aBuild2.Writer = (b, s) => s.Append("Create Grid");
-                aBuild2.InvalidToolbarTypes = new [] { MyToolbarType.BuildCockpit, MyToolbarType.Character, MyToolbarType.LargeCockpit, 
-                    MyToolbarType.None, MyToolbarType.Seat, MyToolbarType.Ship, MyToolbarType.SmallCockpit, MyToolbarType.Spectator}.ToList(); // All except ButtonPanel
+                aBuild2.InvalidToolbarTypes = new List<MyToolbarType> { MyToolbarType.BuildCockpit, MyToolbarType.Character, MyToolbarType.LargeCockpit, 
+                    MyToolbarType.None, MyToolbarType.Seat, MyToolbarType.Ship, MyToolbarType.SmallCockpit, MyToolbarType.Spectator};
                 MyAPIGateway.TerminalControls.AddAction<IMyProjector>(aBuild2);
 
                 IMyTerminalControlListbox itemList = MyAPIGateway.TerminalControls.CreateControl<IMyTerminalControlListbox, IMyProjector>("ComponentList");
@@ -353,6 +353,7 @@ namespace GridSpawner
             }
             else
             {
+                Constants.Notify(Constants.msgNoSpace, activator);
                 BuildState = State.Idle;
             }
         }
@@ -472,8 +473,20 @@ namespace GridSpawner
                 return false;
             }
 
+            Vector3D? newPos = null;
             if (!HasClearArea(p.ProjectedGrid, activator))
-                return false;
+            {
+                newPos = FindClearArea(p.ProjectedGrid);
+                if(newPos.HasValue)
+                {
+                    Constants.Notify(Constants.msgDifferentSpace, activator);
+                }
+                else if(!newPos.HasValue)
+                {
+                    Constants.Notify(Constants.msgNoSpace, activator);
+                    return false;
+                }
+            }
 
             MyObjectBuilder_Projector pBuilder = (MyObjectBuilder_Projector)p.GetObjectBuilderCubeBlock(true);
             if (pBuilder.ProjectedGrids == null || pBuilder.ProjectedGrids.Count == 0)
@@ -495,7 +508,16 @@ namespace GridSpawner
 
 
             MyObjectBuilder_CubeGrid maxGrid2 = (MyObjectBuilder_CubeGrid)p.ProjectedGrid.GetObjectBuilder(true);
-            maxGrid.PositionAndOrientation = maxGrid2.PositionAndOrientation;
+            if (newPos.HasValue && maxGrid2.PositionAndOrientation.HasValue)
+            {
+                MyPositionAndOrientation temp = maxGrid2.PositionAndOrientation.Value;
+                temp.Position = newPos.Value;
+                maxGrid.PositionAndOrientation = temp;
+            }
+            else
+            {
+                maxGrid.PositionAndOrientation = maxGrid2.PositionAndOrientation;
+            }
 
             if (!PrepGrid(activator, p, maxGrid, components))
                 return false;
@@ -566,27 +588,18 @@ namespace GridSpawner
                             if (e is IMyCubeGrid && ((IMyCubeGrid)e2).IsSameConstructAs((IMyCubeGrid)e))
                                 continue;
                             if (HasBlocksInsideOBB((MyCubeGrid)e2, ref eObb))
-                            {
-                                Constants.Notify(Constants.msgNoSpace, activator);
                                 return false;
-                            }
                         }
                         else if (e2 is MyVoxelBase)
                         {
                             MyTuple<float, float> result = ((MyVoxelBase)e2).GetVoxelContentInBoundingBox_Fast(e.LocalAABB, e.WorldMatrix);
                             if (!float.IsNaN(result.Item2) && !float.IsInfinity(result.Item2) && result.Item2 != 0)
-                            {
-                                Constants.Notify(Constants.msgNoSpace, activator);
                                 return false;
-                            }
                         }
                         else
                         {
                             if (GetOBB(e2).Contains(ref eObb) != ContainmentType.Disjoint)
-                            {
-                                Constants.Notify(Constants.msgNoSpace, activator);
                                 return false;
-                            }
                         }
                     }
                 }
@@ -632,6 +645,15 @@ namespace GridSpawner
                 }
             }
             return false;
+        }
+
+        private Vector3D? FindClearArea(IMyEntity e)
+        {
+            BoundingSphereD vol = e.WorldVolume;
+            Vector3D? result = MyAPIGateway.Entities.FindFreePlace(vol.Center, (float)vol.Radius);
+            if (result.HasValue && Vector3D.DistanceSquared(vol.Center, result.Value) > Constants.maxNewDist2)
+                result = null;
+            return result;
         }
 
         // Context: Server

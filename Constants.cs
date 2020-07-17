@@ -18,12 +18,14 @@ namespace GridSpawner
         public static bool IsPlayer => !IsDedicated;
         public static bool IsClient => !IsServer;
         public const string msgNoSpace = "There is not enough room to spawn that.";
+        public const string msgDifferentSpace = "Area occupied, projection spawned nearby.";
         public const string msgMissingComp = " components are needed to build that.";
         public const string msgNoGrid = "No projector grid.";
         public const string msgBuilding = "Projector is busy building a grid.";
         public const string msgWaiting = "Projector is waiting for a previous cooldown to complete.";
         public const double timeoutMultiplier = 0.5;
         public static readonly Random rand = new Random();
+        public const double maxNewDist2 = 1000000;
 
         public static void Notify(string msg, ulong steamId)
         {
