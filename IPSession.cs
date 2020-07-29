@@ -1,24 +1,19 @@
-﻿using GridSpawner.Networking;
-using Sandbox.Graphics.GUI;
+﻿using avaness.GridSpawner.Networking;
 using Sandbox.ModAPI;
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using VRage.Game.Components;
 using VRage.Game.ModAPI;
 using VRage.ModAPI;
 using VRage.Utils;
-using VRageMath;
 
-namespace GridSpawner
+namespace avaness.GridSpawner
 {
     [MySessionComponentDescriptor(MyUpdateOrder.AfterSimulation)]
     public class IPSession : MySessionComponentBase
     {
         public static IPSession Instance;
 
+        public int Runtime; // Server only
         public Network Net { get; private set; }
         public Dictionary<long, Syncable> Syncable = new Dictionary<long, Syncable>();
 
@@ -59,12 +54,14 @@ namespace GridSpawner
 
         public override void UpdateAfterSimulation ()
         {
+            Runtime++;
             if (MyAPIGateway.Session == null)
                 return;
 
             if(!init)
                 Start();
-            MyAPIGateway.Utilities.InvokeOnGameThread(() => SetUpdateOrder(MyUpdateOrder.NoUpdate));
+            if(!Constants.IsServer)
+                MyAPIGateway.Utilities.InvokeOnGameThread(() => SetUpdateOrder(MyUpdateOrder.NoUpdate));
         }
 
         private void OnEntityRemove (IMyEntity e)

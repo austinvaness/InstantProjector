@@ -3,7 +3,7 @@ using Sandbox.ModAPI;
 using System;
 using VRage.ModAPI;
 
-namespace GridSpawner.Networking
+namespace avaness.GridSpawner.Networking
 {
     [ProtoContract(UseProtoMembersOnly = true)]
     public class SyncableProjectorState : Syncable

@@ -1,15 +1,9 @@
 ﻿using Sandbox.Game;
 using Sandbox.ModAPI;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using VRage.Game;
-using VRage.Game.ModAPI;
-using VRage.Utils;
 
-namespace GridSpawner
+namespace avaness.GridSpawner
 {
     public static class Constants
     {
@@ -23,6 +17,7 @@ namespace GridSpawner
         public const string msgNoGrid = "No projector grid.";
         public const string msgBuilding = "Projector is busy building a grid.";
         public const string msgWaiting = "Projector is waiting for a previous cooldown to complete.";
+        public const string msgError = "An unknown error occurred while spawning the grid. Code: ";
         public const double timeoutMultiplier = 0.5;
         public static readonly Random rand = new Random();
         public const double maxNewDist2 = 1000000;

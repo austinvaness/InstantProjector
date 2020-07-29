@@ -1,6 +1,6 @@
 ﻿using Sandbox.ModAPI;
 
-namespace GridSpawner.Networking
+namespace avaness.GridSpawner.Networking
 {
     public abstract class Packet
     {

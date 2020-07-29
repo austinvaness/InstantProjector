@@ -1,4 +1,4 @@
-﻿using GridSpawner.Networking;
+﻿using avaness.GridSpawner.Networking;
 using Sandbox.Common.ObjectBuilders;
 using Sandbox.Definitions;
 using Sandbox.Game.Entities;
@@ -17,9 +17,8 @@ using VRage.ModAPI;
 using VRage.ObjectBuilders;
 using VRage.Utils;
 using VRageMath;
-using VRageRender.Messages;
 
-namespace GridSpawner
+namespace avaness.GridSpawner
 {
     [MyEntityComponentDescriptor(typeof(MyObjectBuilder_Projector), false, "SmallProjector", "LargeProjector")]
     public class InstantProjector : MyGameLogicComponent
@@ -330,32 +329,59 @@ namespace GridSpawner
             Dictionary<MyDefinitionId, int> components;
             if (TryGetGrid(me, activator, out builder, out components))
             {
-                if (!useComponents || ConsumeComponents(activator, GetInventories(), components))
+                int time = IPSession.Instance.Runtime;
+                int timeout = GetTimeout();
+
+                if(MyAPIGateway.Entities.CreateFromObjectBuilderParallel(builder, false, 
+                    (e) => AddEntity(e, activator, timeout, useComponents, components, time)) != null)
                 {
-                    int timeout = GetTimeout();
                     BuildState = State.Building;
-                    MyAPIGateway.Entities.CreateFromObjectBuilderParallel(builder, false, (e) => AddEntity(e, activator, timeout));
+                }
+                else
+                {
+                    Constants.Notify(Constants.msgError + "2", activator);
+                    BuildState = State.Idle;
                 }
             }
         }
 
         // Context: Server
-        private void AddEntity (IMyEntity e, ulong activator, int timeout)
+        private void AddEntity (IMyEntity e, ulong activator, int timeout, bool useComponents, Dictionary<MyDefinitionId, int> components, int startTime)
         {
-            bool clear = HasClearArea(e, activator);
-            if(clear)
-                MyAPIGateway.Entities.AddEntity(e, true);
-            if (clear && timeout > 0)
+            AccelerateTime(e, startTime);
+            if (HasClearArea(e))
             {
-                Timeout = timeout;
-                BuildState = State.Waiting;
-                NeedsUpdate = MyEntityUpdateEnum.EACH_FRAME;
+                if (!useComponents || ConsumeComponents(activator, GetInventories(), components))
+                {
+                    if (timeout > 0)
+                    {
+                        Timeout = timeout;
+                        BuildState = State.Waiting;
+                        NeedsUpdate = MyEntityUpdateEnum.EACH_FRAME;
+                    }
+                    else
+                    {
+                        BuildState = State.Idle;
+                    }
+                    MyAPIGateway.Entities.AddEntity(e, true);
+                    return;
+                }
             }
             else
             {
                 Constants.Notify(Constants.msgNoSpace, activator);
-                BuildState = State.Idle;
             }
+            BuildState = State.Idle;
+            MyAPIGateway.Entities.MarkForClose(e);
+        }
+
+        // Context: Server
+        private void AccelerateTime(IMyEntity e, int startTime)
+        {
+            float deltaTime = Math.Max(IPSession.Instance.Runtime - startTime, 0) * MyEngineConstants.PHYSICS_STEP_SIZE_IN_SECONDS;
+            MatrixD temp = e.WorldMatrix;
+            temp.Translation += e.Physics.LinearVelocity * deltaTime;
+            e.WorldMatrix = temp;
         }
 
         // Context: Server
@@ -467,6 +493,12 @@ namespace GridSpawner
             builder = null;
             components = new Dictionary<MyDefinitionId, int>();
 
+            if (p.CubeGrid?.Physics == null)
+            {
+                Constants.Notify(Constants.msgError + "1", activator);
+                return false;
+            }
+
             if (p.ProjectedGrid == null)
             {
                 Constants.Notify(Constants.msgNoGrid, activator);
@@ -474,7 +506,7 @@ namespace GridSpawner
             }
 
             Vector3D? newPos = null;
-            if (!HasClearArea(p.ProjectedGrid, activator))
+            if (!HasClearArea(p.ProjectedGrid))
             {
                 newPos = FindClearArea(p.ProjectedGrid);
                 if(newPos.HasValue)
@@ -523,6 +555,7 @@ namespace GridSpawner
                 return false;
 
             builder = maxGrid;
+            builder.LinearVelocity = p.CubeGrid.Physics.LinearVelocity;
             return true;
         }
 
@@ -571,7 +604,7 @@ namespace GridSpawner
         }
 
         // Context: Server
-        private bool HasClearArea (IMyEntity e, ulong activator)
+        private bool HasClearArea(IMyEntity e)
         {
             List<MyEntity> entities = new List<MyEntity>();
             MyOrientedBoundingBoxD eObb = GetOBB(e);

@@ -137,7 +137,7 @@ echo obj &gt;&gt; exclude.txt
 mkdir "%25Appdata%25\SpaceEngineers\Mods\$(ProjectName)\Data\Scripts\$(ProjectName)"
 xcopy "*.cs" "%25Appdata%25\SpaceEngineers\Mods\$(ProjectName)\Data\Scripts\$(ProjectName)" /Y /S /exclude:exclude.txt
 xcopy "Workshop\*.*" "%25Appdata%25\SpaceEngineers\Mods\$(ProjectName)" /Y /S
-
+exit
 set wid=2096677783
 set src=%25Appdata%25\SpaceEngineers\Mods\$(ProjectName)
 (robocopy "%25src%25" "%25UserProfile%25\Desktop\DevServer\Instance\content\244850\%25wid%25" /MIR /NJH /NJS) ^&amp; IF %25ERRORLEVEL%25 LSS 8 SET ERRORLEVEL = 0

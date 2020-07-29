@@ -1,12 +1,7 @@
 ﻿using ProtoBuf;
-using Sandbox.Game.Multiplayer;
 using System;
-using System.Collections.Generic;
-using System.Text;
-using VRage;
-using VRage.GameServices;
 
-namespace GridSpawner.Networking
+namespace avaness.GridSpawner.Networking
 {
     [ProtoInclude(1001, typeof(SyncableProjectorState))]
     [ProtoContract(UseProtoMembersOnly = true)]

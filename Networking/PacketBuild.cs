@@ -1,10 +1,7 @@
 ﻿using ProtoBuf;
 using Sandbox.ModAPI;
-using System;
-using VRage.Game.ModAPI;
-using VRage.ModAPI;
 
-namespace GridSpawner.Networking
+namespace avaness.GridSpawner.Networking
 {
     [ProtoContract(UseProtoMembersOnly = true)]
     public class PacketBuild : Packet
@@ -48,6 +45,40 @@ namespace GridSpawner.Networking
         }
 
         public override byte [] ToBinary ()
+        {
+            return MyAPIGateway.Utilities.SerializeToBinary(this);
+        }
+    }
+
+    [ProtoContract(UseProtoMembersOnly = true)]
+    public class PacketCmd : Packet
+    {
+        public override byte TypeId => 0;
+
+        [ProtoMember(1)]
+        public string cmd;
+
+        public PacketCmd()
+        {
+
+        }
+
+        public PacketCmd(string cmd)
+        {
+            this.cmd = cmd;
+        }
+
+        public override void Received(ulong sender)
+        {
+
+        }
+
+        public override void Serialize(byte[] data, ulong sender)
+        {
+            MyAPIGateway.Utilities.SerializeFromBinary<PacketCmd>(data).Received(sender);
+        }
+
+        public override byte[] ToBinary()
         {
             return MyAPIGateway.Utilities.SerializeToBinary(this);
         }

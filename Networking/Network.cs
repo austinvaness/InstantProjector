@@ -1,15 +1,9 @@
 ﻿using ProtoBuf;
-using Sandbox.Game.GameSystems.TextSurfaceScripts;
 using Sandbox.ModAPI;
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using VRage.Game.ModAPI;
-using VRage.Utils;
 
-namespace GridSpawner.Networking
+namespace avaness.GridSpawner.Networking
 {
     public class Network
     {
