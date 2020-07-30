@@ -127,6 +127,9 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="IPSession.cs" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include=".editorconfig" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PostBuildEvent>cd /D "%25Appdata%25\SpaceEngineers\Mods\$(ProjectName)\"

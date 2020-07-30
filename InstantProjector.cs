@@ -17,6 +17,7 @@ using VRage.ModAPI;
 using VRage.ObjectBuilders;
 using VRage.Utils;
 using VRageMath;
+using MyItemType = VRage.Game.ModAPI.Ingame.MyItemType;
 
 namespace avaness.GridSpawner
 {
@@ -191,14 +192,22 @@ namespace avaness.GridSpawner
                 itemList.VisibleRowsCount = 10;
                 itemList.ItemSelected = (b, l) => { };
                 MyAPIGateway.TerminalControls.AddControl<IMyProjector>(itemList);
-                MyLog.Default.WriteLine("Initialized Instant Projector.");
 
-                MyLog.Default.WriteLineAndConsole("Instant Projector controls created.");
+                IMyTerminalControlProperty<Dictionary<MyItemType, int>> itemListProp 
+                    = MyAPIGateway.TerminalControls.CreateProperty<Dictionary<MyItemType, int>, IMyProjector>("RequiredComponents");
+                itemListProp.Enabled = IsWorking;
+                itemListProp.Visible = IsValid;
+                itemListProp.SupportsMultipleBlocks = false;
+                itemListProp.Setter = (b, l) => { };
+                itemListProp.Getter = GetItemListPB;
+                MyAPIGateway.TerminalControls.AddControl<IMyProjector>(itemListProp);
+
+                MyLog.Default.WriteLineAndConsole("Initialized Instant Projector.");
                 controls = true;
             }
 
         }
-        
+
         // Context: All
         public override void UpdateBeforeSimulation ()
         {
@@ -216,8 +225,8 @@ namespace avaness.GridSpawner
             Timeout = newTimeout;
         }
 
-        // Context: All
-        private StringBuilder GetTimeout (IMyTerminalBlock block)
+        // Context: Terminal
+        private static StringBuilder GetTimeout (IMyTerminalBlock block)
         {
             StringBuilder sb = new StringBuilder();
             InstantProjector gl = block.GameLogic.GetAs<InstantProjector>();
@@ -235,7 +244,7 @@ namespace avaness.GridSpawner
             return sb;
         }
 
-        // Context: All
+        // Context: Terminal
         private int GetTimeout ()
         {
             IMyCubeGrid grid = me.ProjectedGrid;
@@ -244,8 +253,8 @@ namespace avaness.GridSpawner
             return (int)Math.Round(((MyCubeGrid)grid).GetBlocks().Count * Constants.timeoutMultiplier * 60);
         }
 
-        // Context: All
-        private void AppendTime (StringBuilder sb, int ticks)
+        // Context: Terminal
+        private static void AppendTime (StringBuilder sb, int ticks)
         {
             int totalSeconds = (int)Math.Round(ticks / 60f);
             int seconds = totalSeconds % 60;
@@ -270,8 +279,8 @@ namespace avaness.GridSpawner
             sb.Append(seconds);
         }
 
-        // Context: All
-        private void GetItemList (IMyTerminalBlock block, List<MyTerminalControlListBoxItem> items, List<MyTerminalControlListBoxItem> selected)
+        // Context: Terminal
+        private static void GetItemList (IMyTerminalBlock block, List<MyTerminalControlListBoxItem> items, List<MyTerminalControlListBoxItem> selected)
         {
             IMyProjector me = (IMyProjector)block;
             if (me.ProjectedGrid != null)
@@ -289,8 +298,17 @@ namespace avaness.GridSpawner
             }
         }
 
-        // Context: All
-        private void BuildClient (IMyTerminalBlock block)
+        // Context: Terminal
+        private static Dictionary<MyItemType, int> GetItemListPB(IMyTerminalBlock block)
+        {
+            IMyProjector me = (IMyProjector)block;
+            if (me.ProjectedGrid != null)
+                return GetComponents(me.ProjectedGrid).ToDictionary(kv => new MyItemType(kv.Key.TypeId, kv.Key.SubtypeId), kv => kv.Value);
+            return new Dictionary<MyItemType, int>();
+        }
+
+        // Context: Terminal
+        private static void BuildClient (IMyTerminalBlock block)
         {
             if (MyAPIGateway.Session == null || !block.IsWorking)
                 return;
@@ -298,8 +316,8 @@ namespace avaness.GridSpawner
             new PacketBuild(block, true).SendToServer();
         }
 
-        // Context: All*
-        private void BuildClientUnsafe (IMyTerminalBlock block)
+        // Context: Terminal
+        private static void BuildClientUnsafe (IMyTerminalBlock block)
         {
             if (MyAPIGateway.Session == null || !block.IsWorking)
                 return;
@@ -698,13 +716,14 @@ namespace avaness.GridSpawner
             return new MyOrientedBoundingBoxD(e.PositionComp.WorldAABB.Center, exts, quat);
         }
 
-        private bool IsWorking (IMyTerminalBlock block)
+        // Context: Terminal
+        private static bool IsWorking (IMyTerminalBlock block)
         {
             return IsValid(block) && block.IsWorking;
         }
 
-        // Context: All
-        private bool IsValid (IMyTerminalBlock block)
+        // Context: Terminal
+        private static bool IsValid (IMyTerminalBlock block)
         {
             return block.CubeGrid?.Physics != null && block.GameLogic.GetAs<InstantProjector>() != null;
         }
