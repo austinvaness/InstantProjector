@@ -44,7 +44,6 @@ namespace avaness.GridSpawner
 
         protected override void UnloadData ()
         {
-            InstantProjector.controls = false;
             Net?.Unload();
             MyAPIGateway.Entities.OnEntityRemove -= OnEntityRemove;
             foreach (Syncable s in Syncable.Values)

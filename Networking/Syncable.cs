@@ -24,7 +24,7 @@ namespace avaness.GridSpawner.Networking
         protected void VerifySettable ()
         {
             if (Constants.IsClient)
-                throw new InvalidOperationException("Syncable value " + key + " cannot be modified by a client.");
+                throw new InvalidOperationException("Syncable of type " + GetType().FullName + " with key " + key + " cannot be modified by a client.");
         }
 
         public void Close ()

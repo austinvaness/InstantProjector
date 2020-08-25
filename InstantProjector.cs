@@ -24,7 +24,7 @@ namespace avaness.GridSpawner
     [MyEntityComponentDescriptor(typeof(MyObjectBuilder_Projector), false, "SmallProjector", "LargeProjector")]
     public class InstantProjector : MyGameLogicComponent
     {
-        public static bool controls = false;
+        private static bool controls = false;
 
         public enum State
         {
@@ -75,7 +75,7 @@ namespace avaness.GridSpawner
                 me.AppendingCustomInfo -= CustomInfo;
                 if (_state != null)
                 {
-                    if (Timeout > 0 && me.CubeGrid != null && IPSession.Instance != null)
+                    if (Constants.IsServer && Timeout > 0 && me.CubeGrid != null && IPSession.Instance != null)
                         IPSession.Instance.SetGridTimeout(me.CubeGrid, Timeout);
                     _state.OnValueReceived -= ReceivedNewState;
                     _state.Close();
@@ -143,6 +143,7 @@ namespace avaness.GridSpawner
                 sep.Enabled = IsValid;
                 sep.Visible = IsValid;
                 MyAPIGateway.TerminalControls.AddControl<IMyProjector>(sep);
+
 
                 IMyTerminalControlButton btnBuild = MyAPIGateway.TerminalControls.CreateControl<IMyTerminalControlButton, IMyProjector>("BuildGrid");
                 btnBuild.Enabled = IsWorking;
@@ -217,7 +218,7 @@ namespace avaness.GridSpawner
             if (newTimeout <= 0)
             {
                 newTimeout = 0;
-                if (BuildState == State.Waiting)
+                if (Constants.IsServer && BuildState == State.Waiting)
                     BuildState = State.Idle;
                 NeedsUpdate = MyEntityUpdateEnum.NONE;
             }
@@ -632,7 +633,7 @@ namespace avaness.GridSpawner
                 foreach (MyEntity entity in entities)
                 {
                     IMyEntity e2 = entity;
-                    if (e2.EntityId != e.EntityId && e2.Physics != null)
+                    if (e2.EntityId != e.EntityId && e2.Physics != null && e.Physics.Enabled)
                     {
                         if (e2 is IMyCubeGrid)
                         {
