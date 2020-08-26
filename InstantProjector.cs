@@ -368,7 +368,7 @@ namespace avaness.GridSpawner
         private void AddEntity (IMyEntity e, ulong activator, int timeout, bool useComponents, Dictionary<MyDefinitionId, int> components, int startTime)
         {
             AccelerateTime(e, startTime);
-            if (HasClearArea(e))
+            if (HasClearArea((IMyCubeGrid)e))
             {
                 if (!useComponents || ConsumeComponents(activator, GetInventories(), components))
                 {
@@ -623,34 +623,34 @@ namespace avaness.GridSpawner
         }
 
         // Context: Server
-        private bool HasClearArea(IMyEntity e)
+        private bool HasClearArea(IMyCubeGrid projectedGrid)
         {
             List<MyEntity> entities = new List<MyEntity>();
-            MyOrientedBoundingBoxD eObb = GetOBB(e);
-            MyGamePruningStructure.GetAllEntitiesInOBB(ref eObb, entities);
+            MyOrientedBoundingBoxD projectedObb = GetOBB(projectedGrid);
+            MyGamePruningStructure.GetAllEntitiesInOBB(ref projectedObb, entities);
             if (entities.Count > 0)
             {
                 foreach (MyEntity entity in entities)
                 {
-                    IMyEntity e2 = entity;
-                    if (e2.EntityId != e.EntityId && e2.Physics != null && e.Physics.Enabled)
+                    IMyEntity e = entity;
+                    if (e.EntityId != projectedGrid.EntityId && e.Physics != null && e.Physics.Enabled)
                     {
-                        if (e2 is IMyCubeGrid)
+                        if (e is IMyCubeGrid)
                         {
-                            if (e is IMyCubeGrid && ((IMyCubeGrid)e2).IsSameConstructAs((IMyCubeGrid)e))
+                            if (((IMyCubeGrid)e).IsSameConstructAs(projectedGrid))
                                 continue;
-                            if (HasBlocksInsideOBB((MyCubeGrid)e2, ref eObb))
+                            if (HasBlocksInsideOBB((MyCubeGrid)e, ref projectedObb))
                                 return false;
                         }
-                        else if (e2 is MyVoxelBase)
+                        else if (e is MyVoxelBase)
                         {
-                            MyTuple<float, float> result = ((MyVoxelBase)e2).GetVoxelContentInBoundingBox_Fast(e.LocalAABB, e.WorldMatrix);
+                            MyTuple<float, float> result = ((MyVoxelBase)e).GetVoxelContentInBoundingBox_Fast(projectedGrid.LocalAABB, projectedGrid.WorldMatrix);
                             if (!float.IsNaN(result.Item2) && !float.IsInfinity(result.Item2) && result.Item2 != 0)
                                 return false;
                         }
                         else
                         {
-                            if (GetOBB(e2).Contains(ref eObb) != ContainmentType.Disjoint)
+                            if (GetOBB(e).Contains(ref projectedObb) != ContainmentType.Disjoint)
                                 return false;
                         }
                     }
