@@ -95,6 +95,7 @@ namespace avaness.GridSpawner
             {
                 Timeout = 0;
                 NeedsUpdate = MyEntityUpdateEnum.NONE;
+                me.RefreshCustomInfo();
             }
         }
 
@@ -139,11 +140,11 @@ namespace avaness.GridSpawner
 
             if (!controls)
             {
+
                 IMyTerminalControlSeparator sep = MyAPIGateway.TerminalControls.CreateControl<IMyTerminalControlSeparator, IMyProjector>("BuildGridSep");
                 sep.Enabled = IsValid;
                 sep.Visible = IsValid;
                 MyAPIGateway.TerminalControls.AddControl<IMyProjector>(sep);
-
 
                 IMyTerminalControlButton btnBuild = MyAPIGateway.TerminalControls.CreateControl<IMyTerminalControlButton, IMyProjector>("BuildGrid");
                 btnBuild.Enabled = IsWorking;
@@ -169,16 +170,16 @@ namespace avaness.GridSpawner
                 aBuild.Enabled = IsValid;
                 aBuild.Action = BuildClient; // For all except button panels
                 aBuild.ValidForGroups = true;
-                aBuild.Name = new StringBuilder("Create Grid");
-                aBuild.Writer = (b, s) => s.Append("Create Grid");
+                aBuild.Name = new StringBuilder("Spawn Grid");
+                aBuild.Writer = (b, s) => s.Append("Spawn");
                 aBuild.InvalidToolbarTypes = new [] { MyToolbarType.ButtonPanel }.ToList();
                 MyAPIGateway.TerminalControls.AddAction<IMyProjector>(aBuild);
                 IMyTerminalAction aBuild2 = MyAPIGateway.TerminalControls.CreateAction<IMyProjector>("BuildGridAction2");
                 aBuild2.Enabled = IsValid;
                 aBuild2.Action = BuildClientUnsafe; // For only button panels
                 aBuild2.ValidForGroups = true;
-                aBuild2.Name = new StringBuilder("Create Grid");
-                aBuild2.Writer = (b, s) => s.Append("Create Grid");
+                aBuild2.Name = new StringBuilder("Spawn Grid");
+                aBuild2.Writer = (b, s) => s.Append("Spawn");
                 aBuild2.InvalidToolbarTypes = new List<MyToolbarType> { MyToolbarType.BuildCockpit, MyToolbarType.Character, MyToolbarType.LargeCockpit, 
                     MyToolbarType.None, MyToolbarType.Seat, MyToolbarType.Ship, MyToolbarType.SmallCockpit, MyToolbarType.Spectator};
                 MyAPIGateway.TerminalControls.AddAction<IMyProjector>(aBuild2);
@@ -724,7 +725,7 @@ namespace avaness.GridSpawner
         }
 
         // Context: Terminal
-        private static bool IsValid (IMyTerminalBlock block)
+        public static bool IsValid (IMyTerminalBlock block)
         {
             return block.CubeGrid?.Physics != null && block.GameLogic.GetAs<InstantProjector>() != null;
         }

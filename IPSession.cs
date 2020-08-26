@@ -1,5 +1,8 @@
 ﻿using avaness.GridSpawner.Networking;
+using Entities.Blocks;
 using Sandbox.ModAPI;
+using Sandbox.ModAPI.Interfaces.Terminal;
+using System;
 using System.Collections.Generic;
 using VRage.Game.Components;
 using VRage.Game.ModAPI;
@@ -38,6 +41,7 @@ namespace avaness.GridSpawner
                 Net.AddFactory(new PacketBuild());
             Net.AddFactory(new SyncableProjectorState());
             MyAPIGateway.Entities.OnEntityRemove += OnEntityRemove;
+            MyAPIGateway.TerminalControls.CustomActionGetter += RemoveVanillaSpawnAction;
             MyLog.Default.WriteLineAndConsole("Instant Projector initialized.");
             init = true;
         }
@@ -46,6 +50,7 @@ namespace avaness.GridSpawner
         {
             Net?.Unload();
             MyAPIGateway.Entities.OnEntityRemove -= OnEntityRemove;
+            MyAPIGateway.TerminalControls.CustomActionGetter -= RemoveVanillaSpawnAction;
             foreach (Syncable s in Syncable.Values)
                 s.Close();
             Instance = null;
@@ -58,9 +63,11 @@ namespace avaness.GridSpawner
                 return;
 
             if(!init)
+            {
                 Start();
-            if(!Constants.IsServer)
                 MyAPIGateway.Utilities.InvokeOnGameThread(() => SetUpdateOrder(MyUpdateOrder.NoUpdate));
+            }
+
         }
 
         private void OnEntityRemove (IMyEntity e)
@@ -69,6 +76,22 @@ namespace avaness.GridSpawner
             int ticks;
             if (grid != null && cooldowns.TryGetValue(grid.EntityId, out ticks))
                 SetGridTimeout(grid, ticks);
+        }
+
+        private void RemoveVanillaSpawnAction(IMyTerminalBlock block, List<IMyTerminalAction> actions)
+        {
+            if(block is IMyProjector && InstantProjector.IsValid(block))
+            {
+                for(int i = actions.Count - 1; i >= 0; i--)
+                {
+                    IMyTerminalAction a = actions[i];
+                    if(a.Id == "SpawnProjection")
+                    {
+                        actions.RemoveAt(i);
+                        return;
+                    }
+                }
+            }
         }
 
         // Returns the new grid tick value
