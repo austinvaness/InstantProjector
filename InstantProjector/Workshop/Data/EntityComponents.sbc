@@ -1,0 +1,18 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<Definitions xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+
+	<EntityComponents>
+
+		<EntityComponent xsi:type="MyObjectBuilder_ModStorageComponentDefinition">
+			<Id>
+				<TypeId>ModStorageComponent</TypeId>
+				<SubtypeId>InstantProjectorStorage</SubtypeId>
+			</Id>
+			<RegisteredStorageGuids>
+				<guid>9AF39300-CC9E-47C1-A7E1-5DC47DF97A1E</guid>
+			</RegisteredStorageGuids>
+		</EntityComponent>
+
+	</EntityComponents>
+
+</Definitions>

@@ -7,7 +7,7 @@
     <ProjectGuid>{E034D7C5-5C7F-4A29-94D9-A8D64BC347B9}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>GridSpawner</RootNamespace>
+    <RootNamespace>avaness.GridSpawner</RootNamespace>
     <AssemblyName>GridSpawner</AssemblyName>
     <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
@@ -83,6 +83,7 @@
     <Reference Include="System">
       <Private>False</Private>
     </Reference>
+    <Reference Include="System.Xml" />
     <Reference Include="VRage">
       <HintPath>C:\Program Files (x86)\Steam\steamapps\common\SpaceEngineers\Bin64\VRage.dll</HintPath>
       <Private>False</Private>
@@ -118,17 +119,36 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Constants.cs" />
+    <Compile Include="Grids\GridComponents.cs" />
+    <Compile Include="Grids\GridBounds.cs" />
+    <Compile Include="Grids\GridOrientation.cs" />
+    <Compile Include="HudAPIv2.cs" />
     <Compile Include="InstantProjector.cs" />
+    <Compile Include="Networking\PacketSettingsRequest.cs" />
+    <Compile Include="Grids\ParallelSpawner.cs" />
+    <Compile Include="Networking\SyncableProjectorSettings.cs" />
+    <Compile Include="Settings\MapSettings.cs" />
+    <Compile Include="Settings\MapSettings.PacketEnum.cs" />
+    <Compile Include="Settings\MapSettings.ValuePacket.cs" />
     <Compile Include="Networking\Network.cs" />
     <Compile Include="Networking\Packet.cs" />
     <Compile Include="Networking\PacketBuild.cs" />
     <Compile Include="Networking\Syncable.cs" />
     <Compile Include="Networking\SyncableProjectorState.cs" />
+    <Compile Include="Grids\ProjectedGrid.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="IPSession.cs" />
+    <Compile Include="Settings\SettingsChat.cs" />
+    <Compile Include="Settings\SettingsHud.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include=".editorconfig" />
+    <None Include="Workshop\Data\EntityComponents.sbc" />
+    <None Include="Workshop\modinfo.sbmi" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Workshop\metadata.mod" />
+    <Content Include="Workshop\thumb.jpg" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
@@ -145,5 +165,8 @@ set wid=2096677783
 set src=%25Appdata%25\SpaceEngineers\Mods\$(ProjectName)
 (robocopy "%25src%25" "%25UserProfile%25\Desktop\DevServer\Instance\content\244850\%25wid%25" /MIR /NJH /NJS) ^&amp; IF %25ERRORLEVEL%25 LSS 8 SET ERRORLEVEL = 0
 (robocopy "%25src%25" "%25ProgramFiles(x86)%25\Steam\steamapps\workshop\content\244850\%25wid%25" /MIR /NJH /NJS) ^&amp; IF %25ERRORLEVEL%25 LSS 8 SET ERRORLEVEL = 0</PostBuildEvent>
+  </PropertyGroup>
+  <PropertyGroup>
+    <LangVersion>6</LangVersion>
   </PropertyGroup>
 </Project>

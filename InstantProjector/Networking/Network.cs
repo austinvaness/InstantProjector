@@ -2,6 +2,7 @@
 using Sandbox.ModAPI;
 using System.Collections.Generic;
 using VRage.Game.ModAPI;
+using VRage.Utils;
 
 namespace avaness.GridSpawner.Networking
 {
@@ -34,9 +35,12 @@ namespace avaness.GridSpawner.Networking
             PacketData p = MyAPIGateway.Utilities.SerializeFromBinary<PacketData>(data);
             if (p != null)
             {
+                //MyLog.Default.WriteLineAndConsole("Received packet with id " + p.id);
                 Packet factory = factories [p.id];
                 if (factory != null)
                     factory.Serialize(p.bytes, p.sender);
+                else
+                    throw new System.Exception("No factory for packet with id " + p.id + "!");
             }
         }
 
@@ -47,12 +51,15 @@ namespace avaness.GridSpawner.Networking
 
         public void SendToServer (byte[] data, byte typeId)
         {
+            //MyLog.Default.WriteLineAndConsole("Sent packet with id " + typeId + " to server.");
             if (Constants.IsClient)
                 MyAPIGateway.Multiplayer.SendMessageToServer(mainPacketId, PacketData.ToBinary(data, typeId));
         }
 
         public void SendToOthers (byte[] data, byte typeId)
         {
+            //MyLog.Default.WriteLineAndConsole("Sent packet with id " + typeId + " to others.");
+
             data = PacketData.ToBinary(data, typeId);
 
             ulong me = 0;
@@ -66,12 +73,16 @@ namespace avaness.GridSpawner.Networking
 
         public void SendTo (byte [] data, byte typeId, ulong id)
         {
+            //MyLog.Default.WriteLineAndConsole("Sent packet with id " + typeId + " to " + id + ".");
+
             if (id != 0)
                 MyAPIGateway.Multiplayer.SendMessageTo(mainPacketId, PacketData.ToBinary(data, typeId), id);
         }
 
         public void SendToNot (byte[] data, byte typeId, ulong id)
         {
+            //MyLog.Default.WriteLineAndConsole("Sent packet with id " + typeId + " to everyone except " + id + ".");
+
             data = PacketData.ToBinary(data, typeId);
 
             ulong me = 0;

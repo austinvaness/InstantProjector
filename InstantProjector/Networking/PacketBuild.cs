@@ -11,20 +11,21 @@ namespace avaness.GridSpawner.Networking
         [ProtoMember(1)]
         public long entityId;
         [ProtoMember(2)]
-        public byte trustSender;
+        public byte data;
         
         public PacketBuild()
         {
 
         }
 
-        public PacketBuild (IMyTerminalBlock projector, bool trustSender)
+        public PacketBuild (IMyTerminalBlock projector, bool trustSender, bool cancel)
         {
             entityId = projector.EntityId;
+            data = 0;
             if (trustSender)
-                this.trustSender = 1;
-            else
-                this.trustSender = 0;
+                data |= 1;
+            if (cancel)
+                data |= 2;
         }
 
 
@@ -40,45 +41,18 @@ namespace avaness.GridSpawner.Networking
             {
                 InstantProjector gl = p.GameLogic.GetAs<InstantProjector>();
                 if (gl != null)
-                    gl.BuildServer(sender, trustSender == 1);
+                {
+                    bool trustSender = (data & 1) == 1;
+                    bool cancel = (data & 2) == 2;
+                    if (cancel)
+                        gl.CancelServer(sender, trustSender);
+                    else
+                        gl.BuildServer(sender, trustSender);
+                }
             }
         }
 
         public override byte [] ToBinary ()
-        {
-            return MyAPIGateway.Utilities.SerializeToBinary(this);
-        }
-    }
-
-    [ProtoContract(UseProtoMembersOnly = true)]
-    public class PacketCmd : Packet
-    {
-        public override byte TypeId => 0;
-
-        [ProtoMember(1)]
-        public string cmd;
-
-        public PacketCmd()
-        {
-
-        }
-
-        public PacketCmd(string cmd)
-        {
-            this.cmd = cmd;
-        }
-
-        public override void Received(ulong sender)
-        {
-
-        }
-
-        public override void Serialize(byte[] data, ulong sender)
-        {
-            MyAPIGateway.Utilities.SerializeFromBinary<PacketCmd>(data).Received(sender);
-        }
-
-        public override byte[] ToBinary()
         {
             return MyAPIGateway.Utilities.SerializeToBinary(this);
         }
