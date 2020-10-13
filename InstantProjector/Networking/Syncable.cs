@@ -42,7 +42,6 @@ namespace avaness.GridSpawner.Networking
 
         public virtual void RequestFromServer()
         {
-            //MyLog.Default.WriteLineAndConsole("Requested syncable from server with key " + key);
             if(Constants.IsClient)
                 SendToServer();
         }
@@ -50,20 +49,12 @@ namespace avaness.GridSpawner.Networking
         public override void Received (ulong sender)
         {
             Syncable s;
-            bool tryGet = IPSession.Instance.Syncable.TryGetValue(key, out s);
-            if (tryGet && IsType(s))
+            if (IPSession.Instance.Syncable.TryGetValue(key, out s) && IsType(s))
             {
                 if (Constants.IsServer)
                     ReceivedFromClient(s, sender);
                 else
                     ReceivedFromServer(s, sender);
-            }
-            else
-            {
-                //if (!tryGet)
-                    //MyLog.Default.WriteLineAndConsole("Unable to find syncable value " + key);
-                //else
-                    //MyLog.Default.WriteLineAndConsole("Syncable types don't match. " + GetType() + " != " + s.GetType());
             }
         }
 
@@ -76,8 +67,6 @@ namespace avaness.GridSpawner.Networking
         protected virtual void ReceivedFromServer(Syncable current, ulong sender)
         {
             // A value has been received from the server
-            //if(current is SyncableProjectorSettings)
-                //MyLog.Default.WriteLine("Received from server: " + ToString());
             CopyToInvoke(current);
         }
 

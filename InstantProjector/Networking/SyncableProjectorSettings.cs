@@ -83,7 +83,6 @@ namespace avaness.GridSpawner.Networking
             SyncableProjectorSettings s = (SyncableProjectorSettings)val;
             s._speed = _speed;
             s._looseArea = _looseArea;
-            //MyLog.Default.WriteLineAndConsole("Received new settings: " + ToString());
         }
 
         protected override bool IsType(Syncable s)
@@ -95,7 +94,6 @@ namespace avaness.GridSpawner.Networking
         {
             if (_speed <= 0)
             {
-                //MyLog.Default.WriteLineAndConsole("Sent setting to client: " + current);
                 current.SendTo(sender);
             }
             else
@@ -108,7 +106,6 @@ namespace avaness.GridSpawner.Networking
         public override void RequestFromServer()
         {
             _speed = 0;
-            //MyLog.Default.WriteLineAndConsole("Sent request to server.");
             base.RequestFromServer();
         }
 

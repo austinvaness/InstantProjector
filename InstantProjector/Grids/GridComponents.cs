@@ -1,6 +1,5 @@
 ﻿using Sandbox.Common.ObjectBuilders;
 using Sandbox.Definitions;
-using Sandbox.Game;
 using Sandbox.ModAPI;
 using System;
 using System.Collections;

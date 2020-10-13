@@ -1,7 +1,6 @@
 ﻿using Sandbox.Game;
 using Sandbox.ModAPI;
 using System;
-using System.Text;
 using VRage.Game;
 using VRageMath;
 

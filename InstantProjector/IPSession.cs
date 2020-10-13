@@ -1,23 +1,13 @@
 ﻿using avaness.GridSpawner.Networking;
 using avaness.GridSpawner.Settings;
-using Entities.Blocks;
 using Sandbox.ModAPI;
 using Sandbox.ModAPI.Interfaces.Terminal;
-using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using VRage.Compiler;
 using VRage.Game.Components;
-using VRage.Game.ModAPI;
-using VRage.ModAPI;
 using VRage.Utils;
-using VRageMath;
-
-/* TODO: 
- * More asynchronous code!
-*/
 
 namespace avaness.GridSpawner
 {

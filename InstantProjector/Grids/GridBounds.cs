@@ -3,15 +3,11 @@ using Sandbox.Game.Entities;
 using Sandbox.ModAPI;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using VRage;
 using VRage.Game;
 using VRage.Game.Entity;
 using VRage.Game.ModAPI;
 using VRage.ModAPI;
-using VRage.Utils;
 using VRageMath;
 
 namespace avaness.GridSpawner.Grids
@@ -107,38 +103,6 @@ namespace avaness.GridSpawner.Grids
             Vector3I.Abs(ref result, out result);
             return cube.Min + result;
         }
-
-        /*public void Draw()
-        {
-            //Color c = new Color(255, 0, 0, 200);
-            //foreach (MyOrientedBoundingBoxD obb in obbs)
-            //    DrawOBB(obb, c);
-            //DrawSphere(worldVolume, c);
-        }
-
-        private void DrawOBB(MyOrientedBoundingBoxD obb, Color color, MySimpleObjectRasterizer raster = MySimpleObjectRasterizer.Solid, float thickness = 0.01f)
-        {
-            MyStringId material = MyStringId.GetOrCompute("Square");
-            BoundingBoxD box = new BoundingBoxD(-obb.HalfExtent, obb.HalfExtent);
-            MatrixD wm = MatrixD.CreateFromQuaternion(obb.Orientation);
-            wm.Translation = obb.Center;
-            MySimpleObjectDraw.DrawTransparentBox(ref wm, ref box, ref color, raster, 1, thickness, material, material);
-        }
-
-        private void DrawSphere(BoundingSphereD sphere, Color color, float thickness = 0.01f)
-        {
-            Vector4 c = color.ToVector4();
-            MyStringId material = MyStringId.GetOrCompute("Square");
-            Random rand = new Random(); 
-            for(int i = 0; i < 20; i++)
-            {
-                double x = (rand.NextDouble() * 2) - 1;
-                double y = (rand.NextDouble() * 2) - 1;
-                double z = (rand.NextDouble() * 2) - 1;
-                Vector3D dir = Vector3D.Normalize(new Vector3D(x, y, z));
-                MySimpleObjectDraw.DrawLine(sphere.Center, sphere.Center + (dir * sphere.Radius), material, ref c, thickness);
-            }
-        }*/
 
         public IMyEntity GetOverlappingEntity()
         {

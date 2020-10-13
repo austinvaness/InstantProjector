@@ -1,5 +1,4 @@
 ﻿using Draygo.API;
-using System;
 
 namespace avaness.GridSpawner.Settings
 {

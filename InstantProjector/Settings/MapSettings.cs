@@ -3,8 +3,6 @@ using ProtoBuf;
 using Sandbox.ModAPI;
 using System;
 using System.Xml.Serialization;
-using VRage.Replication;
-using VRage.Utils;
 
 namespace avaness.GridSpawner.Settings
 {
@@ -205,7 +203,6 @@ namespace avaness.GridSpawner.Settings
         {
             if (!SyncData)
                 return;
-            //MyLog.Default.WriteLineAndConsole("Syncing settings value " + p);
             if (Constants.IsServer)
                 p.SendToOthers();
             else

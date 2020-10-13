@@ -5,7 +5,6 @@ using Sandbox.Definitions;
 using Sandbox.Game.Entities;
 using Sandbox.Game.EntityComponents;
 using Sandbox.ModAPI;
-using Sandbox.ModAPI.Interfaces;
 using Sandbox.ModAPI.Interfaces.Terminal;
 using System;
 using System.Collections.Generic;
@@ -14,7 +13,6 @@ using System.Text;
 using VRage.Game;
 using VRage.Game.Components;
 using VRage.Game.ModAPI;
-using VRage.Game.ObjectBuilders.Definitions;
 using VRage.ModAPI;
 using VRage.ObjectBuilders;
 using VRage.Utils;
@@ -282,7 +280,7 @@ namespace avaness.GridSpawner
                 aCancel.Writer = (b, s) => s.Append("Cancel");
                 aCancel.InvalidToolbarTypes = new[] { MyToolbarType.ButtonPanel }.ToList();
                 MyAPIGateway.TerminalControls.AddAction<IMyProjector>(aCancel);
-                IMyTerminalAction aCancel2 = MyAPIGateway.TerminalControls.CreateAction<IMyProjector>("CancelBuild");
+                IMyTerminalAction aCancel2 = MyAPIGateway.TerminalControls.CreateAction<IMyProjector>("CancelBuildGrid");
                 aCancel2.Enabled = IsValid;
                 aCancel2.Action = CancelClientUnsafe; // For only button panels
                 aCancel2.ValidForGroups = true;
@@ -494,7 +492,13 @@ namespace avaness.GridSpawner
                         pending.Notify(Constants.msgTime + (newTimer / 60) + " seconds.", 2);
                     else if (newTimer % 3600 == 0) // >= 60 seconds, every minute
                     {
-                        pending.Notify(Constants.msgTime + (newTimer / 3600) + " minutes.", 10);
+                        int minutes = newTimer / 3600;
+                        string msg = Constants.msgTime + minutes + " minute";
+                        if (minutes > 1)
+                            msg += "s.";
+                        else
+                            msg += ".";
+                        pending.Notify(msg, 10);
 
                         pending.UpdateBounds();
                         IMyEntity e = pending.GetOverlappingEntity();
