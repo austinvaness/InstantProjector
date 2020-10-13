@@ -4,6 +4,12 @@ namespace avaness.GridSpawner.Networking
 {
     public abstract class Packet
     {
+        // 0 = PacketBuild
+        // 1 = SyncableProjectorState
+        // 2 = MapSettings
+        // 3 = MapSettings.ValuePacket
+        // 4 = PacketSettingsRequest
+        // 5 = SyncableProjectorSettings
         public abstract byte TypeId { get; }
 
         public abstract byte [] ToBinary ();

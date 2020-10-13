@@ -2,6 +2,7 @@
 using Sandbox.ModAPI;
 using System.Collections.Generic;
 using VRage.Game.ModAPI;
+using VRage.Utils;
 
 namespace avaness.GridSpawner.Networking
 {
@@ -37,6 +38,8 @@ namespace avaness.GridSpawner.Networking
                 Packet factory = factories [p.id];
                 if (factory != null)
                     factory.Serialize(p.bytes, p.sender);
+                else
+                    throw new System.Exception("No factory for packet with id " + p.id + "!");
             }
         }
 

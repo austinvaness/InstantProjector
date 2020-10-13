@@ -27,15 +27,16 @@ namespace avaness.GridSpawner.Networking
         }
 
         [ProtoMember(2)]
-        public int Timeout;
+        public int Timer;
+
 
         public SyncableProjectorState () : base()
         { }
 
-        public SyncableProjectorState (byte id, IMyEntity e, InstantProjector.State state, int timeout) : base(id, e.EntityId)
+        public SyncableProjectorState (IMyEntity e, InstantProjector.State state, int timeout) : base(e.EntityId)
         {
             _state = state;
-            Timeout = timeout;
+            Timer = timeout;
         }
 
         public override byte [] ToBinary ()
@@ -57,12 +58,12 @@ namespace avaness.GridSpawner.Networking
         {
             SyncableProjectorState ps = (SyncableProjectorState)s;
             ps._state = _state;
-            ps.Timeout = Timeout;
+            ps.Timer = Timer;
         }
 
         public override string ToString ()
         {
-            return "{ State:" + _state + ", Timeout:" + Timeout + " }";
+            return "{ State:" + _state + ", Timeout:" + Timer + " }";
         }
     }
 }
