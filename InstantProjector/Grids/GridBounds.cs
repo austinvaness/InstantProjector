@@ -139,7 +139,7 @@ namespace avaness.GridSpawner.Grids
                     {
                         if (e is IMyCubeGrid)
                         {
-                            if ((entityIds == null || !entityIds.Contains(e.EntityId)) && !HasBlocksInsideSphere((MyCubeGrid)e, ref bs))
+                            if ((entityIds == null || !entityIds.Contains(e.EntityId)) && HasBlocksInsideSphere((MyCubeGrid)e, ref bs))
                                 return e;
                         }
                         else if (e is MyVoxelBase)
