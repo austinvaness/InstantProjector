@@ -95,7 +95,15 @@ namespace avaness.GridSpawner.Grids
                 comps = new GridComponents();
 
             int totalBlocks = 0;
+
             MyIDModule owner = ((MyCubeBlock)p).IDModule;
+            if (activator != 0)
+            {
+                long temp = MyAPIGateway.Players.TryGetIdentityId(activator);
+                if (temp != 0)
+                    owner = new MyIDModule(temp, owner.ShareMode);
+            }
+
             foreach (MyObjectBuilder_CubeGrid grid in grids)
             {
                 totalBlocks += grid.CubeBlocks.Count;
