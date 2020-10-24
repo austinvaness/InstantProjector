@@ -11,6 +11,7 @@ namespace avaness.GridSpawner.Settings
     {
         public override byte TypeId => 2;
 
+        [XmlIgnore]
         public bool SyncData = false;
 
         public MapSettings()
@@ -23,6 +24,8 @@ namespace avaness.GridSpawner.Settings
             OnComponentCostModifierChanged = null;
             OnMinBlocksChanged = null;
             OnMaxBlocksChanged = null;
+            OnSubgridsChanged = null;
+            OnPowerModifierChanged = null;
         }
 
         [XmlElement]
@@ -135,6 +138,28 @@ namespace avaness.GridSpawner.Settings
         private bool subgrids = true;
         public event Action<bool> OnSubgridsChanged;
 
+        [XmlElement]
+        [ProtoMember(6)]
+        public float PowerModifier
+        {
+            get
+            {
+                return powerModifier;
+            }
+            set
+            {
+                if(value != powerModifier)
+                {
+                    powerModifier = value;
+                    Sync(new ValuePacket(PacketEnum.PowerModifier, value));
+                    if (OnPowerModifierChanged != null)
+                        OnPowerModifierChanged.Invoke(value);
+                }
+            }
+        }
+        private float powerModifier = 6;
+        public event Action<float> OnPowerModifierChanged;
+
         public static MapSettings Load()
         {
             try
@@ -193,6 +218,10 @@ namespace avaness.GridSpawner.Settings
             subgrids = config.Subgrids;
             if (OnSubgridsChanged != null)
                 OnSubgridsChanged.Invoke(subgrids);
+
+            powerModifier = config.PowerModifier;
+            if (OnPowerModifierChanged != null)
+                OnPowerModifierChanged.Invoke(powerModifier);
 
             SyncData = true;
         }

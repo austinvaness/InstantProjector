@@ -11,6 +11,7 @@ namespace avaness.GridSpawner.Settings
         private HudAPIv2.MenuTextInput menuComponentCostModifier;
         private HudAPIv2.MenuTextInput menuMinBlocks;
         private HudAPIv2.MenuTextInput menuMaxBlocks;
+        private HudAPIv2.MenuTextInput menuPowerModifier;
         private HudAPIv2.MenuItem menuSubgrids;
 
         public SettingsHud()
@@ -39,8 +40,23 @@ namespace avaness.GridSpawner.Settings
             menuMaxBlocks = new HudAPIv2.MenuTextInput("Max Blocks - " + config.MaxBlocks, category,
                 "Enter the maximum number of blocks allowed to build.", OnMaxBlocksSubmit);
             config.OnMaxBlocksChanged += Config_OnMaxBlocksChanged;
+            menuPowerModifier = new HudAPIv2.MenuTextInput("Power Modifier - " + config.PowerModifier, category,
+                "Enter the power modifier.", OnPowerSubmit);
+            config.OnPowerModifierChanged += Config_OnPowerModifierChanged;
             menuSubgrids = new HudAPIv2.MenuItem("Subgrids - " + config.Subgrids, category, OnSubgridsClick);
             config.OnSubgridsChanged += Config_OnSubgridsChanged;
+        }
+
+        private void Config_OnPowerModifierChanged(float num)
+        {
+            menuPowerModifier.Text = "Power Modifier - " + num;
+        }
+
+        private void OnPowerSubmit(string s)
+        {
+            float num;
+            if (float.TryParse(s, out num) && num >= 0 && !float.IsInfinity(num) && !float.IsNaN(num))
+                config.PowerModifier = num;
         }
 
         private void OnSubgridsClick()

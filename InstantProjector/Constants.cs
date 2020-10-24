@@ -32,7 +32,6 @@ namespace avaness.GridSpawner
 
         public const int minSpeed = 1;
         public const int maxSpeed = 100;
-        public const float speedEnergyScale = 6; // Energy in MW = minPower + scale * (speed - 1);
 
         internal const string mapFile = "InstantProjector-Settings.xml";
 

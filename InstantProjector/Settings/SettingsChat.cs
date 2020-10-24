@@ -185,6 +185,35 @@ namespace avaness.GridSpawner.Settings
                         Show("Subgrids: " + b);
                     }
                     break;
+                case "power":
+                    {
+                        if (args.Length > 3)
+                        {
+                            Show("Usage: /ip power <value>");
+                            return;
+                        }
+
+                        if (args.Length == 2)
+                        {
+                            Show("Power Modifier: " + config.PowerModifier);
+                            return;
+                        }
+
+                        float n;
+                        if (!float.TryParse(args[2], out n))
+                        {
+                            Show("Unable to parse '" + args[2] + "' into a number.");
+                            return;
+                        }
+                        if (n < 0 || float.IsInfinity(n) || float.IsNaN(n))
+                        {
+                            Show("Value must be greater than 0.");
+                            return;
+                        }
+                        config.PowerModifier = n;
+                        Show("Power Modifier: " + n);
+                    }
+                    break;
                 default:
                     ShowHelp();
                     break;
@@ -198,7 +227,8 @@ namespace avaness.GridSpawner.Settings
                 "/ip compcost <value>\n" +
                 "/ip minblocks <value>\n" +
                 "/ip maxblocks <value>\n" +
-                "/ip subgrids <true|false>";
+                "/ip subgrids <true|false>\n" +
+                "/ip power <value>";
             Show(s);
         }
 

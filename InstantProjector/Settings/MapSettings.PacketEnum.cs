@@ -9,7 +9,8 @@
             MinBlocks = 2,
             MaxBlocks = 3,
             Subgrids = 4,
-            StaticOnly = 5
+            StaticOnly = 5,
+            PowerModifier = 6
         }
 
     }

@@ -60,16 +60,16 @@ namespace avaness.GridSpawner.Settings
                             config.blockBuildTime = num;
                             if (config.OnBlockBuildTimeChanged != null)
                                 config.OnBlockBuildTimeChanged.Invoke(num);
-                            break;
                         }
+                        break;
                     case PacketEnum.ComponentCostModifier:
                         {
                             float num = BitConverter.ToSingle(value, 0);
                             config.ComponentCostModifier = num;
                             if (config.OnComponentCostModifierChanged != null)
                                 config.OnComponentCostModifierChanged.Invoke(num);
-                            break;
                         }
+                        break;
                     case PacketEnum.MinBlocks:
                         {
                             int num = BitConverter.ToInt32(value, 0);
@@ -92,6 +92,14 @@ namespace avaness.GridSpawner.Settings
                             config.Subgrids = b;
                             if (config.OnSubgridsChanged != null)
                                 config.OnSubgridsChanged.Invoke(b);
+                        }
+                        break;
+                    case PacketEnum.PowerModifier:
+                        {
+                            float num = BitConverter.ToSingle(value, 0);
+                            config.PowerModifier = num;
+                            if (config.OnPowerModifierChanged != null)
+                                config.OnPowerModifierChanged.Invoke(num);
                         }
                         break;
                 }

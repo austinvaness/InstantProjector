@@ -153,10 +153,6 @@ namespace avaness.GridSpawner
         // Context: All
         private void CustomInfo (IMyTerminalBlock block, StringBuilder sb)
         {
-            sb.Append("Building Input: ");
-            MyValueFormatter.AppendWorkInBestUnit(GetPower(), sb);
-            sb.AppendLine();
-
             sb.Append("Current Input: ");
             MyValueFormatter.AppendWorkInBestUnit(sink.RequiredInputByType(MyResourceDistributorComponent.ElectricityId), sb);
             sb.AppendLine();
@@ -414,7 +410,7 @@ namespace avaness.GridSpawner
 
         private float GetPower()
         {
-            return minPower + Constants.speedEnergyScale * (Speed - 1);
+            return minPower + IPSession.Instance.MapSettings.PowerModifier * (Speed - 1);
         }
 
         // Context: Server
@@ -445,25 +441,27 @@ namespace avaness.GridSpawner
         }
 
         // Context: Terminal
-        private void SetSpeed(IMyTerminalBlock block, float value)
+        private static void SetSpeed(IMyTerminalBlock block, float value)
         {
             InstantProjector ip = block.GameLogic.GetAs<InstantProjector>();
             ip.Speed = (float)MathHelper.Clamp(Math.Round(value, 2), 1, 1000);
-            RefreshUI();
+            ip.RefreshUI();
             if(Constants.IsServer)
-                SaveStorage();
+                ip.SaveStorage();
         }
 
         // Context: Terminal
-        private float GetSpeed(IMyTerminalBlock block)
+        private static float GetSpeed(IMyTerminalBlock block)
         {
             return block.GameLogic.GetAs<InstantProjector>().Speed;
         }
 
         // Context: Terminal
-        private void GetSpeedText(IMyTerminalBlock block, StringBuilder sb)
+        private static void GetSpeedText(IMyTerminalBlock block, StringBuilder sb)
         {
-            sb.Append(GetSpeed(block)).Append('x');
+            InstantProjector ip = block.GameLogic.GetAs<InstantProjector>();
+            MyValueFormatter.AppendWorkInBestUnit(ip.GetPower(), sb);
+            sb.Append(" - ").Append(ip.Speed).Append('x');
         }
 
         // Context: All

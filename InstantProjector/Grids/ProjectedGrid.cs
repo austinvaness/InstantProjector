@@ -377,11 +377,6 @@ namespace avaness.GridSpawner.Grids
         {
             return comps.HasComponents(GetInventories(p), out neededCount, out neededName);
         }
-
-        /*public void Draw()
-        {
-            bounds.Draw();
-        }*/
     }
 }
 
