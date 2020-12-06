@@ -3,6 +3,8 @@ using ProtoBuf;
 using Sandbox.ModAPI;
 using System;
 using System.Xml.Serialization;
+using VRage.Game;
+using VRage.ObjectBuilders;
 
 namespace avaness.GridSpawner.Settings
 {
@@ -26,6 +28,8 @@ namespace avaness.GridSpawner.Settings
             OnMaxBlocksChanged = null;
             OnSubgridsChanged = null;
             OnPowerModifierChanged = null;
+            OnExtraComponentChanged = null;
+            OnExtraCompCostChanged = null;
         }
 
         [XmlElement]
@@ -160,6 +164,58 @@ namespace avaness.GridSpawner.Settings
         private float powerModifier = 6;
         public event Action<float> OnPowerModifierChanged;
 
+
+        [XmlElement]
+        [ProtoMember(7)]
+        public float ExtraCompCost
+        {
+            get
+            {
+                return extraCompCost;
+            }
+            set
+            {
+                if (value != extraCompCost)
+                {
+                    extraCompCost = value;
+                    Sync(new ValuePacket(PacketEnum.ExtraCompCostModifier, value));
+                    if (OnExtraCompCostChanged != null)
+                        OnExtraCompCostChanged.Invoke(value);
+                }
+            }
+        }
+        private float extraCompCost = 1;
+        public event Action<float> OnExtraCompCostChanged;
+
+        [XmlElement]
+        [ProtoMember(8)]
+        public SerializableDefinitionId? ExtraComponent
+        {
+            get
+            {
+                return extraComponent;
+            }
+            set
+            {
+                if(value.HasValue != extraComponent.HasValue || (value.HasValue && extraComponent.HasValue && (MyDefinitionId)value.Value != extraComponent.Value))
+                {
+                    extraComponent = value;
+                    Sync(new ValuePacket(PacketEnum.ExtraComponent, value));
+                    if (OnExtraComponentChanged != null)
+                        OnExtraComponentChanged.Invoke(value);
+                }
+            }
+        }
+        private SerializableDefinitionId? extraComponent = null;
+        public event Action<SerializableDefinitionId?> OnExtraComponentChanged;
+
+        public string GetExtraCompName()
+        {
+            if (extraComponent.HasValue)
+                return extraComponent.Value.ToString().Replace("MyObjectBuilder_", "");
+            return "None";
+        }
+
         public static MapSettings Load()
         {
             try
@@ -207,21 +263,29 @@ namespace avaness.GridSpawner.Settings
             if (OnComponentCostModifierChanged != null)
                 OnComponentCostModifierChanged.Invoke(componentCostModifier);
 
-            minBlocks = config.MinBlocks;
+            minBlocks = config.minBlocks;
             if (OnMinBlocksChanged != null)
                 OnMinBlocksChanged.Invoke(minBlocks);
 
-            maxBlocks = config.MaxBlocks;
+            maxBlocks = config.maxBlocks;
             if (OnMaxBlocksChanged != null)
                 OnMaxBlocksChanged.Invoke(maxBlocks);
 
-            subgrids = config.Subgrids;
+            subgrids = config.subgrids;
             if (OnSubgridsChanged != null)
                 OnSubgridsChanged.Invoke(subgrids);
 
-            powerModifier = config.PowerModifier;
+            powerModifier = config.powerModifier;
             if (OnPowerModifierChanged != null)
                 OnPowerModifierChanged.Invoke(powerModifier);
+
+            extraComponent = config.extraComponent;
+            if (OnExtraComponentChanged != null)
+                OnExtraComponentChanged.Invoke(extraComponent);
+
+            extraCompCost = config.extraCompCost;
+            if (OnExtraCompCostChanged != null)
+                OnExtraCompCostChanged.Invoke(extraCompCost);
 
             SyncData = true;
         }

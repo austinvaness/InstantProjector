@@ -1,8 +1,8 @@
 ﻿using ProtoBuf;
 using Sandbox.ModAPI;
+using System;
 using System.Collections.Generic;
 using VRage.Game.ModAPI;
-using VRage.Utils;
 
 namespace avaness.GridSpawner.Networking
 {
@@ -13,7 +13,7 @@ namespace avaness.GridSpawner.Networking
 
         public Network()
         {
-            MyAPIGateway.Multiplayer.RegisterMessageHandler(mainPacketId, ReceivePacket);
+            MyAPIGateway.Multiplayer.RegisterSecureMessageHandler(mainPacketId, ReceivePacket);
         }
 
         /// <summary>
@@ -27,10 +27,11 @@ namespace avaness.GridSpawner.Networking
                 factories [id] = factory;
         }
 
+
         /// <summary>
         /// Serializes incoming data into PacketData then redirects to the appropriate factory.
         /// </summary>
-        public void ReceivePacket(byte[] data)
+        private void ReceivePacket(ushort id, byte[] data, ulong sender, bool fromServer)
         {
             PacketData p = MyAPIGateway.Utilities.SerializeFromBinary<PacketData>(data);
             if (p != null)
@@ -39,13 +40,13 @@ namespace avaness.GridSpawner.Networking
                 if (factory != null)
                     factory.Serialize(p.bytes, p.sender);
                 else
-                    throw new System.Exception("No factory for packet with id " + p.id + "!");
+                    throw new Exception("No factory for packet with id " + p.id + "!");
             }
         }
 
         public void Unload()
         {
-            MyAPIGateway.Multiplayer.UnregisterMessageHandler(mainPacketId, ReceivePacket);
+            MyAPIGateway.Multiplayer.UnregisterSecureMessageHandler(mainPacketId, ReceivePacket);
         }
 
         public void SendToServer (byte[] data, byte typeId)

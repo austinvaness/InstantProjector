@@ -125,8 +125,12 @@ namespace avaness.GridSpawner
                     _settings.OnValueReceived -= RefreshUI;
                     _settings.Close();
                 }
-                IPSession.Instance.MapSettings.OnSubgridsChanged -= MapSettings_OnSubgridsChanged;
-                IPSession.Instance.MapSettings.OnComponentCostModifierChanged -= MapSettings_OnComponentCostModifierChanged;
+
+                Settings.MapSettings config = IPSession.Instance.MapSettings;
+                config.OnSubgridsChanged -= ClearCachedComps;
+                config.OnComponentCostModifierChanged -= ClearCachedComps;
+                config.OnExtraComponentChanged -= ClearCachedComps;
+                config.OnExtraCompCostChanged -= ClearCachedComps;
             }
         }
 
@@ -200,9 +204,11 @@ namespace avaness.GridSpawner
             me.AppendingCustomInfo += CustomInfo;
             me.RefreshCustomInfo();
 
-            IPSession.Instance.MapSettings.OnSubgridsChanged += MapSettings_OnSubgridsChanged;
-            IPSession.Instance.MapSettings.OnComponentCostModifierChanged += MapSettings_OnComponentCostModifierChanged;
-
+            Settings.MapSettings config = IPSession.Instance.MapSettings;
+            config.OnSubgridsChanged += ClearCachedComps;
+            config.OnComponentCostModifierChanged += ClearCachedComps;
+            config.OnExtraComponentChanged += ClearCachedComps;
+            config.OnExtraCompCostChanged += ClearCachedComps;
 
             if (!controls)
             {
@@ -360,12 +366,17 @@ namespace avaness.GridSpawner
 
         }
 
-        private void MapSettings_OnComponentCostModifierChanged(float cost)
+        private void ClearCachedComps(SerializableDefinitionId? id)
         {
             cachedComps = null;
         }
 
-        private void MapSettings_OnSubgridsChanged(bool subgrids)
+        private void ClearCachedComps(float cost)
+        {
+            cachedComps = null;
+        }
+
+        private void ClearCachedComps(bool subgrids)
         {
             cachedComps = null;
         }
@@ -612,7 +623,8 @@ namespace avaness.GridSpawner
                     cachedComps = new GridComponents(me);
                 else
                     cachedComps = new GridComponents(me.ProjectedGrid);
-                cachedComps.ApplyModifier(IPSession.Instance.MapSettings.ComponentCostModifier);
+
+                cachedComps.ApplySettings(IPSession.Instance.MapSettings);
             }
             return cachedComps;
         }

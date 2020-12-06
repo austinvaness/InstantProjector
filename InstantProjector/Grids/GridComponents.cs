@@ -13,6 +13,7 @@ namespace avaness.GridSpawner.Grids
     public class GridComponents : IEnumerable<KeyValuePair<MyDefinitionId, int>>
     {
         private Dictionary<MyDefinitionId, int> comps = new Dictionary<MyDefinitionId, int>();
+        private int blockCount = 0;
 
         public GridComponents()
         {
@@ -69,6 +70,7 @@ namespace avaness.GridSpawner.Grids
                 else
                     comps.Add(id, c.Count);
             }
+            blockCount++;
         }
 
         public void IncludeCount(MyCubeBlockDefinition def, int count)
@@ -83,22 +85,45 @@ namespace avaness.GridSpawner.Grids
                 else
                     comps.Add(id, cCount);
             }
+            blockCount += count;
         }
 
 
-        public void ApplyModifier(float modifier)
+        public void ApplySettings(Settings.MapSettings config)
         {
-            if (modifier == 1)
-                return;
-
-            Dictionary<MyDefinitionId, int> newDict = new Dictionary<MyDefinitionId, int>(comps.Count);
-            foreach (KeyValuePair<MyDefinitionId, int> kv in comps)
+            float modifier = config.ComponentCostModifier;
+            Dictionary<MyDefinitionId, int> newDict;
+            if(modifier != 1)
             {
-                int newCost = (int)Math.Round(kv.Value * modifier);
-                if (newCost > 0)
-                    newDict.Add(kv.Key, newCost);
+                newDict = new Dictionary<MyDefinitionId, int>(comps.Count);
+                foreach (KeyValuePair<MyDefinitionId, int> kv in comps)
+                {
+                    int newCost = (int)Math.Round(kv.Value * modifier);
+                    if (newCost > 0)
+                        newDict.Add(kv.Key, newCost);
 
+                }
             }
+            else
+            {
+                newDict = comps;
+            }
+
+            MyDefinitionId? extraComp = config.ExtraComponent;
+            if (extraComp.HasValue)
+            {
+                MyDefinitionId id = extraComp.Value;
+                int count;
+                if (!newDict.TryGetValue(id, out count))
+                    count = 0;
+
+                int numExtraComps = (int)Math.Round(blockCount * config.ExtraCompCost);
+                if (numExtraComps <= 0)
+                    numExtraComps = 1;
+
+                newDict[id] = count + numExtraComps;
+            }
+
             comps = newDict;
         }
 

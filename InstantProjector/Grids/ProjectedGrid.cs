@@ -142,7 +142,7 @@ namespace avaness.GridSpawner.Grids
             }
             else
             {
-                comps.ApplyModifier(IPSession.Instance.MapSettings.ComponentCostModifier);
+                comps.ApplySettings(IPSession.Instance.MapSettings);
                 int needed;
                 string name;
                 if (!comps.HasComponents(GetInventories(p), out needed, out name))
@@ -333,7 +333,8 @@ namespace avaness.GridSpawner.Grids
 
         private static List<IMyInventory> GetInventories(IMyCubeBlock cube)
         {
-            List<IMyCubeGrid> grids = MyAPIGateway.GridGroups.GetGroup(cube.CubeGrid, GridLinkTypeEnum.Logical);
+            List<IMyCubeGrid> grids = new List<IMyCubeGrid>();
+            MyAPIGateway.GridGroups.GetGroup(cube.CubeGrid, GridLinkTypeEnum.Logical, grids);
             List<IMyInventory> inventories = new List<IMyInventory>();
             long owner = cube.OwnerId;
             foreach (IMyCubeGrid g in grids)

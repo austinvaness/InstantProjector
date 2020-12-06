@@ -1,6 +1,8 @@
-﻿using Sandbox.Game;
+﻿using Sandbox.Definitions;
+using Sandbox.Game;
 using Sandbox.ModAPI;
 using System;
+using VRage.Game;
 using VRage.Game.ModAPI;
 
 namespace avaness.GridSpawner.Settings
@@ -214,6 +216,112 @@ namespace avaness.GridSpawner.Settings
                         Show("Power Modifier: " + n);
                     }
                     break;
+                case "extracomp":
+                    {
+                        if (args.Length > 4)
+                        {
+                            Show("Usage: /ip extracomp [<typeid> <subtypeid>|none]");
+                            return;
+                        }
+
+                        if (args.Length == 2)
+                        {
+                            Show("Extra Component: " + config.GetExtraCompName());
+                            return;
+                        }
+
+
+                        string typeId = args[2];
+                        string subtypeId;
+                        
+                        if(args.Length == 3)
+                        {
+                            if (typeId.Equals("null", StringComparison.OrdinalIgnoreCase) || typeId.Equals("none", StringComparison.OrdinalIgnoreCase))
+                            {
+                                config.ExtraComponent = null;
+                                Show("Extra Component: None");
+                                return;
+                            }
+
+                            if(typeId.Contains("/"))
+                            {
+                                string[] typeArgs = typeId.Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
+                                if(typeArgs.Length != 2)
+                                {
+                                    Show("Usage: /ip extracomp [<typeid> <subtypeid>|none]");
+                                    return;
+                                }
+                                typeId = typeArgs[0];
+                                subtypeId = typeArgs[1];
+                            }
+                            else
+                            {
+                                Show("Usage: /ip extracomp [<typeid> <subtypeid>|none]");
+                                return;
+                            }
+                        }
+                        else
+                        {
+                            subtypeId = args[3];
+                        }
+
+                        string obTypeId;
+                        if (!typeId.StartsWith("MyObjectBuilder_"))
+                        {
+                            obTypeId = "MyObjectBuilder_" + typeId;
+                        }
+                        else
+                        {
+                            obTypeId = typeId;
+                            typeId = typeId.Replace("MyObjectBuilder_", "");
+                        }
+
+                        MyDefinitionId id;
+                        if(!MyDefinitionId.TryParse(obTypeId, subtypeId, out id))
+                        {
+                            Show($"Unable to parse {typeId}/{subtypeId} into an id.");
+                            return;
+                        }
+
+                        MyPhysicalItemDefinition comp;
+                        if(!MyDefinitionManager.Static.TryGetPhysicalItemDefinition(id, out comp))
+                        {
+                            Show($"Unable to find an item with id {typeId}/{subtypeId} in the game.");
+                            return;
+                        }
+                        config.ExtraComponent = id;
+                        Show("Extra Component: " + config.GetExtraCompName());
+                    }
+                    break;
+                case "extracompcost":
+                    {
+                        if (args.Length > 3)
+                        {
+                            Show("Usage: /ip extracompcost <value>");
+                            return;
+                        }
+
+                        if (args.Length == 2)
+                        {
+                            Show("Extra Component Cost: " + config.ExtraCompCost);
+                            return;
+                        }
+
+                        float n;
+                        if (!float.TryParse(args[2], out n))
+                        {
+                            Show("Unable to parse '" + args[2] + "' into a number.");
+                            return;
+                        }
+                        if (n < 0 || float.IsInfinity(n) || float.IsNaN(n))
+                        {
+                            Show("Value must be greater than 0.");
+                            return;
+                        }
+                        config.ExtraCompCost = n;
+                        Show("Extra Component Cost: " + n);
+                    }
+                    break;
                 default:
                     ShowHelp();
                     break;
@@ -228,7 +336,9 @@ namespace avaness.GridSpawner.Settings
                 "/ip minblocks <value>\n" +
                 "/ip maxblocks <value>\n" +
                 "/ip subgrids <true|false>\n" +
-                "/ip power <value>";
+                "/ip power <value>\n" +
+                "/ip extracomp [<typeid> <subtypeid>|none]\n" +
+                "/ip extracompcost <value>";
             Show(s);
         }
 

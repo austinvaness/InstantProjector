@@ -89,10 +89,10 @@ namespace IngameScript
             if (projector == null)
                 throw new Exception("Unable to find projector.");
 
-            spawnProjection = projector.GetActionWithName("BuildGridAction2");
+            spawnProjection = projector.GetActionWithName("BuildGrid");
             projectedGridComps = projector.GetProperty("RequiredComponents").As<Dictionary<MyItemType, int>>();
-            projectedGridTimer = projector.GetProperty("GridTimeoutProjection").As<int>();
-            timer = projector.GetProperty("GridTimeoutCurrent").As<int>();
+            projectedGridTimer = projector.GetProperty("GridTimerProjection").As<int>();
+            timer = projector.GetProperty("GridTimerCurrent").As<int>();
             Runtime.UpdateFrequency = UpdateFrequency.Update10;
         }
 
@@ -126,7 +126,8 @@ namespace IngameScript
                 sb.Append("Components: (").Append(comps.Count).Append(')').AppendLine();
                 foreach (KeyValuePair<MyItemType, int> kv in comps)
                     sb.Append(kv.Key.SubtypeId).Append(": ").Append(kv.Value).AppendLine();
-                spawnProjection.Apply(projector);
+                if(autoBuild)
+                    spawnProjection.Apply(projector);
             }
 
             canvas.WriteText(sb);

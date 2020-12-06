@@ -2,6 +2,7 @@
 using ProtoBuf;
 using Sandbox.ModAPI;
 using System;
+using VRage.ObjectBuilders;
 
 namespace avaness.GridSpawner.Settings
 {
@@ -20,6 +21,15 @@ namespace avaness.GridSpawner.Settings
             public ValuePacket()
             {
 
+            }
+
+            public ValuePacket(PacketEnum type, SerializableDefinitionId? value)
+            {
+                this.type = (byte)type;
+                if(!value.HasValue)
+                    this.value = new byte[0];
+                else
+                    this.value = MyAPIGateway.Utilities.SerializeToBinary(value.Value);
             }
 
             public ValuePacket(PacketEnum type, int value)
@@ -65,7 +75,7 @@ namespace avaness.GridSpawner.Settings
                     case PacketEnum.ComponentCostModifier:
                         {
                             float num = BitConverter.ToSingle(value, 0);
-                            config.ComponentCostModifier = num;
+                            config.componentCostModifier = num;
                             if (config.OnComponentCostModifierChanged != null)
                                 config.OnComponentCostModifierChanged.Invoke(num);
                         }
@@ -73,7 +83,7 @@ namespace avaness.GridSpawner.Settings
                     case PacketEnum.MinBlocks:
                         {
                             int num = BitConverter.ToInt32(value, 0);
-                            config.MinBlocks = num;
+                            config.minBlocks = num;
                             if (config.OnMinBlocksChanged != null)
                                 config.OnMinBlocksChanged.Invoke(num);
                         }
@@ -81,7 +91,7 @@ namespace avaness.GridSpawner.Settings
                     case PacketEnum.MaxBlocks:
                         {
                             int num = BitConverter.ToInt32(value, 0);
-                            config.MaxBlocks = num;
+                            config.maxBlocks = num;
                             if (config.OnMaxBlocksChanged != null)
                                 config.OnMaxBlocksChanged.Invoke(num);
                         }
@@ -89,7 +99,7 @@ namespace avaness.GridSpawner.Settings
                     case PacketEnum.Subgrids:
                         {
                             bool b = value[0] == 1;
-                            config.Subgrids = b;
+                            config.subgrids = b;
                             if (config.OnSubgridsChanged != null)
                                 config.OnSubgridsChanged.Invoke(b);
                         }
@@ -97,9 +107,28 @@ namespace avaness.GridSpawner.Settings
                     case PacketEnum.PowerModifier:
                         {
                             float num = BitConverter.ToSingle(value, 0);
-                            config.PowerModifier = num;
+                            config.powerModifier = num;
                             if (config.OnPowerModifierChanged != null)
                                 config.OnPowerModifierChanged.Invoke(num);
+                        }
+                        break;
+                    case PacketEnum.ExtraCompCostModifier:
+                        {
+                            float num = BitConverter.ToSingle(value, 0);
+                            config.extraCompCost = num;
+                            if (config.OnExtraCompCostChanged != null)
+                                config.OnExtraCompCostChanged.Invoke(num);
+                        }
+                        break;
+                    case PacketEnum.ExtraComponent:
+                        {
+                            SerializableDefinitionId? id = null;
+                            if (value.Length > 0)
+                                id = MyAPIGateway.Utilities.SerializeFromBinary<SerializableDefinitionId>(value);
+
+                            config.extraComponent = id;
+                            if (config.OnExtraComponentChanged != null)
+                                config.OnExtraComponentChanged.Invoke(id);
                         }
                         break;
                 }
