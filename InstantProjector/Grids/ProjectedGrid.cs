@@ -16,6 +16,7 @@ namespace avaness.GridSpawner.Grids
     public class ProjectedGrid
     {
         public ulong Activator { get; }
+        public int BlockCount { get; }
 
         private int startTime;
         private readonly List<MyObjectBuilder_CubeGrid> grids;
@@ -28,9 +29,10 @@ namespace avaness.GridSpawner.Grids
         private ParallelSpawner spawner;
         private Action onDone;
 
-        private ProjectedGrid(ulong activator, IMyProjector p, List<MyObjectBuilder_CubeGrid> grids, GridBounds bounds, GridComponents comps, GridOrientation orientation, bool shiftBuildArea)
+        private ProjectedGrid(ulong activator, IMyProjector p, List<MyObjectBuilder_CubeGrid> grids, GridBounds bounds, GridComponents comps, GridOrientation orientation, bool shiftBuildArea, int blockCount)
         {
             Activator = activator;
+            BlockCount = blockCount;
             this.p = p;
             this.grids = grids;
             this.bounds = bounds;
@@ -161,7 +163,7 @@ namespace avaness.GridSpawner.Grids
                 return false;
             }
 
-            projectedGrid = new ProjectedGrid(activator, p, grids, bounds, comps, orientation, shiftBuildArea);
+            projectedGrid = new ProjectedGrid(activator, p, grids, bounds, comps, orientation, shiftBuildArea, totalBlocks);
             return true;
         }
 

@@ -126,8 +126,10 @@ namespace avaness.GridSpawner.Grids
 
         private static IMyEntity GetOverlappingEntity(MyOrientedBoundingBoxD obb, BoundingSphereD bs, HashSet<long> entityIds = null)
         {
-            BoundingBoxD localAABB = new BoundingBoxD(obb.Center - obb.HalfExtent, obb.Center + obb.HalfExtent);
+            BoundingBoxD localAABB = new BoundingBoxD(-obb.HalfExtent, obb.HalfExtent);
             MatrixD localAABBOrientation = MatrixD.CreateFromQuaternion(obb.Orientation);
+            localAABBOrientation.Translation = obb.Center;
+
             List<MyEntity> entities = new List<MyEntity>();
             MyGamePruningStructure.GetAllEntitiesInOBB(ref obb, entities);
             if (entities.Count > 0)
@@ -144,8 +146,7 @@ namespace avaness.GridSpawner.Grids
                         }
                         else if (e is MyVoxelBase)
                         {
-                            MyTuple<float, float> result = ((MyVoxelBase)e).GetVoxelContentInBoundingBox_Fast(localAABB, localAABBOrientation);
-                            if (!float.IsNaN(result.Item2) && !float.IsInfinity(result.Item2) && result.Item2 != 0)
+                            if(IsCollidingWith((MyVoxelBase)e, localAABB, localAABBOrientation))
                                 return e;
                         }
                         else
@@ -160,6 +161,19 @@ namespace avaness.GridSpawner.Grids
                 }
             }
             return null;
+        }
+
+        private static bool IsCollidingWith(MyVoxelBase voxel, BoundingBoxD box, MatrixD orientation)
+        {
+            if (voxel.RootVoxel != null)
+                voxel = voxel.RootVoxel;
+
+            if (voxel.IsAnyAabbCornerInside(ref orientation, box))
+                return true;
+
+            Vector3D extents = box.HalfExtents;
+            double min = Math.Min(extents.X, Math.Min(extents.Y, extents.Z));
+            return voxel.DoOverlapSphereTest((float)min, orientation.Translation);
         }
 
 

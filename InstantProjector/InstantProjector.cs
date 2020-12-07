@@ -176,6 +176,9 @@ namespace avaness.GridSpawner
         // Context: All
         public override void UpdateOnceBeforeFrame ()
         {
+            if (me.CubeGrid?.Physics == null)
+                return;
+
             _state = new SyncableProjectorState(me, State.Idle, 0);
 
             if (Constants.IsServer)
@@ -544,14 +547,20 @@ namespace avaness.GridSpawner
             return sb;
         }
 
-        // Context: All
-        private int GetBlueprintTimer ()
+        private int GetBlueprintTimer()
         {
-            IMyCubeGrid grid = me.ProjectedGrid;
-            if (grid == null)
+            if (me.ProjectedGrid == null)
                 return 0;
+
+            GridComponents comps = GetComponents();
+            return GetBlueprintTimer(comps.BlockCount);
+        }
+
+        // Context: All
+        private int GetBlueprintTimer (int blockCount)
+        {
             float speed = 1 / Speed;
-            return (int)Math.Max(Math.Round(((MyCubeGrid)grid).GetBlocks().Count * IPSession.Instance.MapSettings.BlockBuildTime * 60 * speed), 60);
+            return (int)Math.Max(Math.Round(blockCount * IPSession.Instance.MapSettings.BlockBuildTime * 60 * speed), 60);
         }
 
         // Context: Terminal
@@ -733,7 +742,7 @@ namespace avaness.GridSpawner
             ProjectedGrid grid;
             if (ProjectedGrid.TryCreate(activator, me, _settings.LooseArea, out grid))
             {
-                Timer = GetBlueprintTimer();
+                Timer = GetBlueprintTimer(grid.BlockCount);
                 pending = grid;
                 NeedsUpdate = MyEntityUpdateEnum.EACH_FRAME;
                 buildPower = GetPower();

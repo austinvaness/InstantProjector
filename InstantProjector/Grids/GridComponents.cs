@@ -12,8 +12,9 @@ namespace avaness.GridSpawner.Grids
 {
     public class GridComponents : IEnumerable<KeyValuePair<MyDefinitionId, int>>
     {
+        public int BlockCount { get; private set; } = 0;
+
         private Dictionary<MyDefinitionId, int> comps = new Dictionary<MyDefinitionId, int>();
-        private int blockCount = 0;
 
         public GridComponents()
         {
@@ -70,7 +71,7 @@ namespace avaness.GridSpawner.Grids
                 else
                     comps.Add(id, c.Count);
             }
-            blockCount++;
+            BlockCount++;
         }
 
         public void IncludeCount(MyCubeBlockDefinition def, int count)
@@ -85,7 +86,7 @@ namespace avaness.GridSpawner.Grids
                 else
                     comps.Add(id, cCount);
             }
-            blockCount += count;
+            BlockCount += count;
         }
 
 
@@ -117,7 +118,7 @@ namespace avaness.GridSpawner.Grids
                 if (!newDict.TryGetValue(id, out count))
                     count = 0;
 
-                int numExtraComps = (int)Math.Round(blockCount * config.ExtraCompCost);
+                int numExtraComps = (int)Math.Round(BlockCount * config.ExtraCompCost);
                 if (numExtraComps <= 0)
                     numExtraComps = 1;
 
