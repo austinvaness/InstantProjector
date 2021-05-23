@@ -1,6 +1,5 @@
 ﻿using ProtoBuf;
 using Sandbox.ModAPI;
-using System;
 using VRage.ModAPI;
 
 namespace avaness.GridSpawner.Networking
