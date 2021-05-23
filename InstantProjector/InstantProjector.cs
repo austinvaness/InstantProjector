@@ -15,7 +15,7 @@ using VRage.Utils;
 
 namespace avaness.GridSpawner
 {
-    [MyEntityComponentDescriptor(typeof(MyObjectBuilder_Projector), false, "SmallProjector", "LargeProjector", "LargeBlockConsole")]
+    [MyEntityComponentDescriptor(typeof(MyObjectBuilder_Projector), false, "SmallProjector", "LargeProjector", "LargeBlockConsole", "OverlordProjector")]
     public partial class InstantProjector : MyGameLogicComponent
     {
 
