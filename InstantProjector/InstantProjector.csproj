@@ -153,21 +153,15 @@
     <Content Include="Workshop\metadata.mod" />
     <Content Include="Workshop\thumb.jpg" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>cd /D "%25Appdata%25\SpaceEngineers\Mods\$(ProjectName)\"
-del /S /Q *.*
-cd /D $(ProjectDir)
-echo AssemblyInfo.cs &gt; exclude.txt
-echo obj &gt;&gt; exclude.txt
+    <PostBuildEvent>cd /D $(ProjectDir)
+mkdir "Workshop"
 mkdir "%25Appdata%25\SpaceEngineers\Mods\$(ProjectName)\Data\Scripts\$(ProjectName)"
-xcopy "*.cs" "%25Appdata%25\SpaceEngineers\Mods\$(ProjectName)\Data\Scripts\$(ProjectName)" /Y /S /exclude:exclude.txt
-xcopy "Workshop\*.*" "%25Appdata%25\SpaceEngineers\Mods\$(ProjectName)" /Y /S
-exit
-set wid=2096677783
-set src=%25Appdata%25\SpaceEngineers\Mods\$(ProjectName)
-(robocopy "%25src%25" "%25UserProfile%25\Desktop\DevServer\Instance\content\244850\%25wid%25" /MIR /NJH /NJS) ^&amp; IF %25ERRORLEVEL%25 LSS 8 SET ERRORLEVEL = 0
-(robocopy "%25src%25" "%25ProgramFiles(x86)%25\Steam\steamapps\workshop\content\244850\%25wid%25" /MIR /NJH /NJS) ^&amp; IF %25ERRORLEVEL%25 LSS 8 SET ERRORLEVEL = 0</PostBuildEvent>
+rclone sync "$(ProjectDir)\" "%25Appdata%25\SpaceEngineers\Mods\$(ProjectName)\Data\Scripts\$(ProjectName)" --filter "- obj/**" --filter "- bin/**" --filter "- **/AssemblyInfo.cs" --filter "+ **.cs" --filter "- *" -v
+rclone sync "$(ProjectDir)\Workshop" "%25Appdata%25\SpaceEngineers\Mods\$(ProjectName)" --exclude "**.cs" -v
+</PostBuildEvent>
   </PropertyGroup>
   <PropertyGroup>
     <LangVersion>6</LangVersion>
