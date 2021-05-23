@@ -48,20 +48,20 @@ namespace avaness.GridSpawner.Grids
             // Ensure the projector is valid and has a projection
             if (p.CubeGrid?.Physics == null)
             {
-                Constants.Notify(Constants.msgError + "bad_physics", activator);
+                Utilities.Notify(Constants.msgError + "bad_physics", activator);
                 return false;
             }
 
             if (p.ProjectedGrid == null)
             {
-                Constants.Notify(Constants.msgNoGrid, activator);
+                Utilities.Notify(Constants.msgNoGrid, activator);
                 return false;
             }
 
             MyObjectBuilder_Projector pBuilder = (MyObjectBuilder_Projector)p.GetObjectBuilderCubeBlock(true);
             if (pBuilder.ProjectedGrids == null || pBuilder.ProjectedGrids.Count == 0)
             {
-                Constants.Notify(Constants.msgNoGrid, activator);
+                Utilities.Notify(Constants.msgNoGrid, activator);
                 return false;
             }
 
@@ -70,7 +70,7 @@ namespace avaness.GridSpawner.Grids
             int largestIndex = FindLargest(grids);
 
             MyObjectBuilder_CubeGrid largestGrid = grids[largestIndex];
-            if (InstantProjector.SupportsSubgrids(p))
+            if (Utilities.SupportsSubgrids(p))
             {
                 if(largestIndex != 0)
                 {
@@ -111,16 +111,17 @@ namespace avaness.GridSpawner.Grids
                 }
             }
 
+            Random rand = new Random();
             foreach (MyObjectBuilder_CubeGrid grid in grids)
             {
                 totalBlocks += grid.CubeBlocks.Count;
                 if (totalBlocks > IPSession.Instance.MapSettings.MaxBlocks)
                 {
-                    Constants.Notify(Constants.msgGridLarge, activator);
+                    Utilities.Notify(Constants.msgGridLarge, activator);
                     return false;
                 }
 
-                PrepBlocks(activator, owner, grid, comps);
+                PrepBlocks(rand, activator, owner, grid, comps);
 
                 grid.IsStatic = false;
                 grid.CreatePhysics = true;
@@ -138,7 +139,7 @@ namespace avaness.GridSpawner.Grids
 
             if (totalBlocks < IPSession.Instance.MapSettings.MinBlocks)
             {
-                Constants.Notify(Constants.msgGridSmall, activator);
+                Utilities.Notify(Constants.msgGridSmall, activator);
                 return false;
             }
 
@@ -154,7 +155,7 @@ namespace avaness.GridSpawner.Grids
                 MyDefinitionId neededId;
                 if (!comps.HasComponents(GetInventories(p), out needed, out neededId))
                 {
-                    Constants.Notify(InstantProjector.GetCompsString(needed, neededId), activator);
+                    Utilities.Notify(Utilities.GetCompsString(needed, neededId), activator);
                     return false;
                 }
             }
@@ -164,7 +165,7 @@ namespace avaness.GridSpawner.Grids
             IMyEntity e = bounds.GetOverlappingEntity();
             if (e != null && (!shiftBuildArea || !bounds.HasClearArea()))
             {
-                Constants.Notify(InstantProjector.GetOverlapString(true, e), activator);
+                Utilities.Notify(Utilities.GetOverlapString(true, e), activator);
                 return false;
             }
 
@@ -172,13 +173,13 @@ namespace avaness.GridSpawner.Grids
             return true;
         }
 
-        private static bool PrepBlocks(ulong activator, MyIDModule owner, MyObjectBuilder_CubeGrid grid, GridComponents comps)
+        private static bool PrepBlocks(Random rand, ulong activator, MyIDModule owner, MyObjectBuilder_CubeGrid grid, GridComponents comps)
         {
             foreach (MyObjectBuilder_CubeBlock cubeBuilder in grid.CubeBlocks)
             {
                 if (cubeBuilder.EntityId == 0)
                 {
-                    if (!Constants.RandomEntityId(out cubeBuilder.EntityId))
+                    if (!Utilities.RandomEntityId(rand, out cubeBuilder.EntityId))
                         return false;
                 }
 
@@ -186,7 +187,7 @@ namespace avaness.GridSpawner.Grids
                 MyCubeBlockDefinition def = MyDefinitionManager.Static.GetCubeBlockDefinition(cubeBuilder);
                 if(def == null)
                 {
-                    Constants.Notify(Constants.msgUnknownBlock, activator);
+                    Utilities.Notify(Constants.msgUnknownBlock, activator);
                     return false;
                 }
 
@@ -247,16 +248,16 @@ namespace avaness.GridSpawner.Grids
             {
                 if (shiftBuildArea)
                 {
-                    Constants.Notify(Constants.msgDifferentSpace, Activator);
+                    Utilities.Notify(Constants.msgDifferentSpace, Activator);
                     if (!bounds.TryFindClearArea(finalOrientation))
                     {
-                        Constants.Notify(InstantProjector.GetOverlapString(true, e), Activator);
+                        Utilities.Notify(Utilities.GetOverlapString(true, e), Activator);
                         return false;
                     }
                 }
                 else
                 {
-                    Constants.Notify(InstantProjector.GetOverlapString(true, e), Activator);
+                    Utilities.Notify(Utilities.GetOverlapString(true, e), Activator);
                     return false;
                 }
             }
@@ -305,7 +306,7 @@ namespace avaness.GridSpawner.Grids
                 IMyEntity e = GridBounds.GetOverlappingEntity(grid);
                 if (e != null)
                 {
-                    Constants.Notify(InstantProjector.GetOverlapString(true, e), Activator);
+                    Utilities.Notify(Utilities.GetOverlapString(true, e), Activator);
                     ParallelSpawner.Close(grids);
                     return;
                 }
@@ -368,7 +369,7 @@ namespace avaness.GridSpawner.Grids
 
         public void Notify(string msg, int seconds = 5)
         {
-            Constants.Notify(msg, Activator, seconds);
+            Utilities.Notify(msg, Activator, seconds);
         }
 
         public void UpdateBounds()

@@ -127,6 +127,7 @@
     <Compile Include="Networking\PacketSettingsRequest.cs" />
     <Compile Include="Grids\ParallelSpawner.cs" />
     <Compile Include="Networking\SyncableProjectorSettings.cs" />
+    <Compile Include="ProjectorControls.cs" />
     <Compile Include="Settings\MapSettings.cs" />
     <Compile Include="Settings\MapSettings.PacketEnum.cs" />
     <Compile Include="Settings\MapSettings.ValuePacket.cs" />
@@ -140,6 +141,8 @@
     <Compile Include="IPSession.cs" />
     <Compile Include="Settings\SettingsChat.cs" />
     <Compile Include="Settings\SettingsHud.cs" />
+    <Compile Include="ProjectorState.cs" />
+    <Compile Include="Utilities.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include=".editorconfig" />

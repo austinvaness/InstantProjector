@@ -161,7 +161,7 @@ namespace avaness.GridSpawner.Grids
                 MyFixedPoint needed = CountComponents(inventories, c.Key, c.Value, toRemove);
                 if (needed > 0)
                 {
-                    Constants.Notify(InstantProjector.GetCompsString((int)needed, c.Key), activator);
+                    Utilities.Notify(Utilities.GetCompsString((int)needed, c.Key), activator);
                     return false;
                 }
             }

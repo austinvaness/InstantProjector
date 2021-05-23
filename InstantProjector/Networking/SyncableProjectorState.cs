@@ -11,8 +11,8 @@ namespace avaness.GridSpawner.Networking
         public override byte TypeId { get; } = 1;
 
         [ProtoMember(1)]
-        private InstantProjector.State _state;
-        public InstantProjector.State BuildState
+        private ProjectorState _state;
+        public ProjectorState BuildState
         {
             get
             {
@@ -33,7 +33,7 @@ namespace avaness.GridSpawner.Networking
         public SyncableProjectorState () : base()
         { }
 
-        public SyncableProjectorState (IMyEntity e, InstantProjector.State state, int timeout) : base(e.EntityId)
+        public SyncableProjectorState (IMyEntity e, ProjectorState state, int timeout) : base(e.EntityId)
         {
             _state = state;
             Timer = timeout;

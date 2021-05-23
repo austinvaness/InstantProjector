@@ -35,64 +35,6 @@ namespace avaness.GridSpawner
 
         internal const string mapFile = "InstantProjector-Settings.xml";
 
-        public static void Notify(string msg, ulong steamId, int seconds = 5)
-        {
-            if(steamId != 0)
-            {
-                long id2 = MyAPIGateway.Players.TryGetIdentityId(steamId);
-                if (id2 != 0)
-                    MyVisualScriptLogicProvider.ShowNotification(msg, seconds * 1000, "White", id2);
-            }
-        }
-
-        public static long RandomLong ()
-        {
-            byte [] bytes = new byte [8];
-            rand.NextBytes(bytes);
-            return BitConverter.ToInt64(bytes, 0);
-        }
-
-        public static bool RandomEntityId (out long id)
-        {
-            for (int i = 0; i < 100; i++)
-            {
-                id = RandomLong();
-                if (!MyAPIGateway.Entities.EntityExists(id))
-                    return true;
-            }
-            id = 0;
-            return false;
-        }
-
-        public static MatrixD LocalToWorld(MatrixD local, MatrixD reference)
-        {
-            return local * reference;
-        }
-
-        public static MatrixD WorldToLocalNI(MatrixD world, MatrixD referenceInverted)
-        {
-            return world * referenceInverted;
-        }
-
-        public static MatrixD WorldToLocal(MatrixD world, MatrixD referenceInverted)
-        {
-            return world * MatrixD.Normalize(MatrixD.Invert(referenceInverted));
-        }
-
-        /*public static Quaternion LocalToWorld(Quaternion local, Quaternion reference)
-        {
-            return reference * local;
-        }
-
-        public static Quaternion WorldToLocal(Quaternion world, Quaternion reference)
-        {
-            return Quaternion.Inverse(reference) * world;
-        }
-
-        public static Quaternion WorldToLocalNI(Quaternion world, Quaternion referenceInverted)
-        {
-            return referenceInverted * world;
-        }*/
 
     }
 }

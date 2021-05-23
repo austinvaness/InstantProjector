@@ -179,7 +179,7 @@ namespace avaness.GridSpawner
 
         private void RemoveVanillaSpawnAction(IMyTerminalBlock block, List<IMyTerminalAction> actions)
         {
-            if(block is IMyProjector && InstantProjector.IsValid(block))
+            if(block is IMyProjector && block.GameLogic.GetAs<InstantProjector>() != null)
             {
                 for(int i = actions.Count - 1; i >= 0; i--)
                 {

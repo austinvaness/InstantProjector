@@ -25,14 +25,14 @@ namespace avaness.GridSpawner.Grids
 
         public void Include(MatrixD world)
         {
-            localMatricies.Add(Constants.WorldToLocalNI(world, referenceNI));
+            localMatricies.Add(Utilities.WorldToLocalNI(world, referenceNI));
         }
 
         public IEnumerator<MatrixD> WorldMatricies()
         {
             MatrixD refMatrix = reference.WorldMatrix;
             foreach (MatrixD m in localMatricies)
-                yield return Constants.LocalToWorld(m, refMatrix);
+                yield return Utilities.LocalToWorld(m, refMatrix);
         }
 
         public IEnumerator<MatrixD> GetEnumerator()
