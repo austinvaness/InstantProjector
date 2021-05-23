@@ -195,7 +195,7 @@ namespace avaness.GridSpawner
             if (p.ProjectedGrid == null)
                 return;
             InstantProjector gl = block.GameLogic.GetAs<InstantProjector>();
-            gl.GetComponents().ShowScreen(ProjectedGrid.GetInventories(block));
+            gl.GetComponents().ShowScreen(Utilities.GetInventories(block));
         }
 
         private static bool GetLooseArea(IMyTerminalBlock block)

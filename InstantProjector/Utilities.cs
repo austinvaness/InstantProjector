@@ -2,6 +2,7 @@
 using Sandbox.Game.Entities;
 using Sandbox.ModAPI;
 using System;
+using System.Collections.Generic;
 using System.Text;
 using VRage.Game;
 using VRage.Game.ModAPI;
@@ -12,6 +13,34 @@ namespace avaness.GridSpawner
 {
     public static class Utilities
     {
+        public static List<IMyInventory> GetInventories(IMyCubeBlock cube)
+        {
+            List<IMyCubeGrid> grids = new List<IMyCubeGrid>();
+            MyAPIGateway.GridGroups.GetGroup(cube.CubeGrid, GridLinkTypeEnum.Logical, grids);
+            List<IMyInventory> inventories = new List<IMyInventory>();
+            long owner = cube.OwnerId;
+            foreach (IMyCubeGrid g in grids)
+            {
+                MyCubeGrid grid = (MyCubeGrid)g;
+                foreach (var block in grid.GetFatBlocks())
+                {
+                    if (owner != 0)
+                    {
+                        MyRelationsBetweenPlayerAndBlock relation = block.GetUserRelationToOwner(owner);
+                        if (relation == MyRelationsBetweenPlayerAndBlock.Enemies)
+                            continue;
+                    }
+
+                    for (int i = 0; i < block.InventoryCount; i++)
+                    {
+                        IMyInventory inv = ((IMyCubeBlock)block).GetInventory(i);
+                        inventories.Add(inv);
+                    }
+                }
+            }
+            return inventories;
+        }
+
         public static void AppendTime(StringBuilder sb, int ticks)
         {
             int totalSeconds = (int)Math.Round(ticks / 60f);

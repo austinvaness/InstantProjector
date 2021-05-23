@@ -153,7 +153,7 @@ namespace avaness.GridSpawner.Grids
                 comps.ApplySettings(IPSession.Instance.MapSettings);
                 int needed;
                 MyDefinitionId neededId;
-                if (!comps.HasComponents(GetInventories(p), out needed, out neededId))
+                if (!comps.HasComponents(Utilities.GetInventories(p), out needed, out neededId))
                 {
                     Utilities.Notify(Utilities.GetCompsString(needed, neededId), activator);
                     return false;
@@ -323,7 +323,7 @@ namespace avaness.GridSpawner.Grids
                 }
             }
 
-            if (MyAPIGateway.Session.CreativeMode || comps.ConsumeComponents(Activator, GetInventories(p)))
+            if (MyAPIGateway.Session.CreativeMode || comps.ConsumeComponents(Activator, Utilities.GetInventories(p)))
                 ParallelSpawner.Add(grids);
             else
                 ParallelSpawner.Close(grids);
@@ -339,33 +339,6 @@ namespace avaness.GridSpawner.Grids
             return diff;
         }
 
-        public static List<IMyInventory> GetInventories(IMyCubeBlock cube)
-        {
-            List<IMyCubeGrid> grids = new List<IMyCubeGrid>();
-            MyAPIGateway.GridGroups.GetGroup(cube.CubeGrid, GridLinkTypeEnum.Logical, grids);
-            List<IMyInventory> inventories = new List<IMyInventory>();
-            long owner = cube.OwnerId;
-            foreach (IMyCubeGrid g in grids)
-            {
-                MyCubeGrid grid = (MyCubeGrid)g;
-                foreach (var block in grid.GetFatBlocks())
-                {
-                    if (owner != 0)
-                    {
-                        MyRelationsBetweenPlayerAndBlock relation = block.GetUserRelationToOwner(owner);
-                        if (relation == MyRelationsBetweenPlayerAndBlock.Enemies)
-                            continue;
-                    }
-
-                    for (int i = 0; i < block.InventoryCount; i++)
-                    {
-                        IMyInventory inv = ((IMyCubeBlock)block).GetInventory(i);
-                        inventories.Add(inv);
-                    }
-                }
-            }
-            return inventories;
-        }
 
         public void Notify(string msg, int seconds = 5)
         {
@@ -384,7 +357,7 @@ namespace avaness.GridSpawner.Grids
 
         public bool HasComponents(out int neededCount, out MyDefinitionId neededId)
         {
-            return comps.HasComponents(GetInventories(p), out neededCount, out neededId);
+            return comps.HasComponents(Utilities.GetInventories(p), out neededCount, out neededId);
         }
     }
 }
