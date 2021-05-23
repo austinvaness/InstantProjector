@@ -62,6 +62,9 @@ namespace avaness.GridSpawner.Grids
 
         public void Include(MyCubeBlockDefinition def)
         {
+            if (def == null)
+                return;
+
             foreach(MyCubeBlockDefinition.Component c in def.Components)
             {
                 MyDefinitionId id = c.Definition.Id;
@@ -76,6 +79,9 @@ namespace avaness.GridSpawner.Grids
 
         public void IncludeCount(MyCubeBlockDefinition def, int count)
         {
+            if (def == null)
+                return;
+
             foreach(MyCubeBlockDefinition.Component c in def.Components)
             {
                 int cCount = c.Count * count;
