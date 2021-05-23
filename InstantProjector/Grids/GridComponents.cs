@@ -4,6 +4,7 @@ using Sandbox.ModAPI;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Text;
 using VRage;
 using VRage.Game;
 using VRage.Game.ModAPI;
@@ -198,6 +199,25 @@ namespace avaness.GridSpawner.Grids
             return targetAmount;
         }
 
+        private List<ScreenItem> CountAllComponents(IEnumerable<IMyInventory> inventories, out bool complete)
+        {
+            List<ScreenItem> items = new List<ScreenItem>();
+
+            complete = true;
+            IPSession ipSession = IPSession.Instance;
+            foreach(KeyValuePair<MyDefinitionId, int> c in comps)
+            {
+                MyDefinitionId id = c.Key;
+                int required = c.Value;
+                int need = (int)CountComponents(inventories, id, required);
+                if (need > 0)
+                    complete = false;
+                items.Add(new ScreenItem(ipSession.GetComponentName(id), required, required - need));
+            }
+
+            return items;
+        }
+
         public IEnumerator<KeyValuePair<MyDefinitionId, int>> GetEnumerator()
         {
             return comps.GetEnumerator();
@@ -206,6 +226,40 @@ namespace avaness.GridSpawner.Grids
         IEnumerator IEnumerable.GetEnumerator()
         {
             return comps.GetEnumerator();
+        }
+
+        public void ShowScreen(IEnumerable<IMyInventory> inventories)
+        {
+            StringBuilder sb = new StringBuilder();
+
+            bool complete;
+            foreach(ScreenItem item in CountAllComponents(inventories, out complete))
+            {
+                if(item.Count < item.Required)
+
+                sb.Append(item.Name).Append(": ").Append(item.Count).Append('/').Append(item.Required).AppendLine();
+            }
+
+            if(complete)
+            {
+                sb.AppendLine();
+                sb.AppendLine("All components available!");
+            }
+            MyAPIGateway.Utilities.ShowMissionScreen("Projected Grid Components", "", "", sb.ToString(), null, "Close");
+        }
+
+        private class ScreenItem
+        {
+            public ScreenItem(string name, int required, int count)
+            {
+                Name = name;
+                Required = required;
+                Count = count;
+            }
+
+            public string Name { get; }
+            public int Required { get; }
+            public int Count { get; }
         }
     }
 }

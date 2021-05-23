@@ -338,7 +338,7 @@ namespace avaness.GridSpawner.Grids
             return diff;
         }
 
-        private static List<IMyInventory> GetInventories(IMyCubeBlock cube)
+        public static List<IMyInventory> GetInventories(IMyCubeBlock cube)
         {
             List<IMyCubeGrid> grids = new List<IMyCubeGrid>();
             MyAPIGateway.GridGroups.GetGroup(cube.CubeGrid, GridLinkTypeEnum.Logical, grids);

@@ -220,7 +220,15 @@ namespace avaness.GridSpawner
                 IMyTerminalControlSeparator sep = MyAPIGateway.TerminalControls.CreateControl<IMyTerminalControlSeparator, IMyProjector>("BuildGridSep");
                 sep.Enabled = IsValid;
                 sep.Visible = IsValid;
+                sep.SupportsMultipleBlocks = true;
                 MyAPIGateway.TerminalControls.AddControl<IMyProjector>(sep);
+
+                IMyTerminalControlLabel lbl = MyAPIGateway.TerminalControls.CreateControl<IMyTerminalControlLabel, IMyProjector>("BuildGridLabel");
+                lbl.Enabled = IsValid;
+                lbl.Visible = IsValid;
+                lbl.SupportsMultipleBlocks = true;
+                lbl.Label = MyStringId.GetOrCompute("Instant Projector Controls");
+                MyAPIGateway.TerminalControls.AddControl<IMyProjector>(lbl);
 
                 IMyTerminalControlButton btnBuild = MyAPIGateway.TerminalControls.CreateControl<IMyTerminalControlButton, IMyProjector>("BuildGrid");
                 btnBuild.Enabled = IsWorking;
@@ -324,6 +332,14 @@ namespace avaness.GridSpawner
                 itemList.ItemSelected = (b, l) => { };
                 MyAPIGateway.TerminalControls.AddControl<IMyProjector>(itemList);
 
+                IMyTerminalControlButton itemListInfo = MyAPIGateway.TerminalControls.CreateControl<IMyTerminalControlButton, IMyProjector>("ComponentListInfo");
+                itemListInfo.Enabled = IsWorking;
+                itemListInfo.Visible = IsValid;
+                itemListInfo.SupportsMultipleBlocks = false;
+                itemListInfo.Title = MyStringId.GetOrCompute("Check Inventory");
+                itemListInfo.Action = OpenItemList; 
+                MyAPIGateway.TerminalControls.AddControl<IMyProjector>(itemListInfo);
+
 
                 // Programmable Block stuff
 
@@ -367,6 +383,14 @@ namespace avaness.GridSpawner
                 controls = true;
             }
 
+        }
+
+        private void OpenItemList(IMyTerminalBlock obj)
+        {
+            if (me.ProjectedGrid == null)
+                return;
+
+            GetComponents().ShowScreen(ProjectedGrid.GetInventories(me));
         }
 
         private void ClearCachedComps(SerializableDefinitionId? id)
