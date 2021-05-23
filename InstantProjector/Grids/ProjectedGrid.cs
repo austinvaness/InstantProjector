@@ -146,10 +146,10 @@ namespace avaness.GridSpawner.Grids
             {
                 comps.ApplySettings(IPSession.Instance.MapSettings);
                 int needed;
-                string name;
-                if (!comps.HasComponents(GetInventories(p), out needed, out name))
+                MyDefinitionId neededId;
+                if (!comps.HasComponents(GetInventories(p), out needed, out neededId))
                 {
-                    Constants.Notify(InstantProjector.GetCompsString(needed, name), activator);
+                    Constants.Notify(InstantProjector.GetCompsString(needed, neededId), activator);
                     return false;
                 }
             }
@@ -376,9 +376,9 @@ namespace avaness.GridSpawner.Grids
             return bounds.GetOverlappingEntity();
         }
 
-        public bool HasComponents(out int neededCount, out string neededName)
+        public bool HasComponents(out int neededCount, out MyDefinitionId neededId)
         {
-            return comps.HasComponents(GetInventories(p), out neededCount, out neededName);
+            return comps.HasComponents(GetInventories(p), out neededCount, out neededId);
         }
     }
 }

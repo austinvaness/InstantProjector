@@ -1,12 +1,15 @@
 ﻿using avaness.GridSpawner.Networking;
 using avaness.GridSpawner.Settings;
+using Sandbox.Definitions;
 using Sandbox.ModAPI;
 using Sandbox.ModAPI.Interfaces.Terminal;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using VRage.Game;
 using VRage.Game.Components;
+using VRage.ObjectBuilders;
 using VRage.Utils;
 
 namespace avaness.GridSpawner
@@ -25,18 +28,26 @@ namespace avaness.GridSpawner
         private bool init = false;
         private SettingsHud hud;
         private SettingsChat chat;
-        private readonly ConcurrentDictionary<string, string> typenames = new ConcurrentDictionary<string, string>();
+        private readonly Dictionary<string, string> physicalItemNames = new Dictionary<string, string>();
 
-        public string GetOrComputeReadable(string typename)
+        public string GetComponentName(MyDefinitionId id)
         {
-            string s;
-            if (typenames.TryGetValue(typename, out s))
-                return s;
-            return MakeReadable(typename);
+            string name = id.SubtypeName;
+            if (string.IsNullOrWhiteSpace(name))
+                return "Null";
+
+            string result;
+            if (physicalItemNames.TryGetValue(name, out result))
+                return result;
+
+            return MakeReadable(name);
         }
 
-        private string MakeReadable(string typename)
+        public string MakeReadable(string typename)
         {
+            if (string.IsNullOrWhiteSpace(typename))
+                return "Null";
+
             StringBuilder sb = new StringBuilder(typename.Length);
 
             int i;
@@ -108,8 +119,17 @@ namespace avaness.GridSpawner
             Net = new Network();
         }
 
-        private void Start ()
+        private void Start()
         {
+            MyObjectBuilderType obType = MyObjectBuilderType.Parse("MyObjectBuilder_Component");
+            foreach (var def in MyDefinitionManager.Static.GetPhysicalItemDefinitions())
+            {
+                string name = def.DisplayNameText;
+                if (!string.IsNullOrEmpty(name) && def.Id.TypeId == obType)
+                    physicalItemNames[def.Id.SubtypeName] = name;
+            }
+
+
             if (Constants.IsServer)
             {
                 Net.AddFactory(new PacketBuild());

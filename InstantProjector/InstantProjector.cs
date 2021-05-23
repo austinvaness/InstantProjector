@@ -518,9 +518,9 @@ namespace avaness.GridSpawner
                             Constants.Notify(GetOverlapString(false, e), pending.Activator, 10);
 
                         int needed;
-                        string name;
-                        if (!pending.HasComponents(out needed, out name))
-                            Constants.Notify(GetCompsString(needed, name), pending.Activator, 10);
+                        MyDefinitionId neededId;
+                        if (!pending.HasComponents(out needed, out neededId))
+                            Constants.Notify(GetCompsString(needed, neededId), pending.Activator, 10);
                     }
                 }
                 RefreshUI();
@@ -780,7 +780,7 @@ namespace avaness.GridSpawner
 
         public static string GetOverlapString(bool error, IMyEntity e)
         {
-            string type = IPSession.Instance.GetOrComputeReadable(e.GetType().Name);
+            string type = IPSession.Instance.MakeReadable(e.GetType().Name);
 
             StringBuilder sb = new StringBuilder();
             if (string.IsNullOrWhiteSpace(type))
@@ -816,10 +816,9 @@ namespace avaness.GridSpawner
             return sb.ToString();
         }
 
-        public static string GetCompsString(int neededCount, string neededName)
+        public static string GetCompsString(int neededCount, MyDefinitionId compId)
         {
-            string name = IPSession.Instance.GetOrComputeReadable(neededName);
-            return neededCount + " " + neededName + Constants.msgMissingComp;
+            return neededCount + " " + IPSession.Instance.GetComponentName(compId) + Constants.msgMissingComp;
         }
     }
 }

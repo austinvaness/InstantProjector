@@ -134,20 +134,20 @@ namespace avaness.GridSpawner.Grids
             comps = newDict;
         }
 
-        public bool HasComponents(IEnumerable<IMyInventory> inventories, out int neededCount, out string neededName)
+        public bool HasComponents(IEnumerable<IMyInventory> inventories, out int neededCount, out MyDefinitionId neededId)
         {
             foreach (KeyValuePair<MyDefinitionId, int> c in comps)
             {
                 MyFixedPoint needed = CountComponents(inventories, c.Key, c.Value);
                 if (needed > 0)
                 {
-                    neededName = c.Key.SubtypeName;
+                    neededId = c.Key;
                     neededCount = (int)needed;
                     return false;
                 }
             }
             neededCount = 0;
-            neededName = null;
+            neededId = new MyDefinitionId();
             return true;
         }
 
@@ -160,7 +160,7 @@ namespace avaness.GridSpawner.Grids
                 MyFixedPoint needed = CountComponents(inventories, c.Key, c.Value, toRemove);
                 if (needed > 0)
                 {
-                    Constants.Notify(InstantProjector.GetCompsString((int)needed, c.Key.SubtypeName), activator);
+                    Constants.Notify(InstantProjector.GetCompsString((int)needed, c.Key), activator);
                     return false;
                 }
             }
