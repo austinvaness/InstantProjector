@@ -207,6 +207,7 @@ namespace avaness.GridSpawner
             config.OnExtraComponentChanged += ClearCachedComps;
             config.OnExtraCompCostChanged += ClearCachedComps;
 
+            ProjectorControls.Create();
         }
 
         private void ClearCachedComps(SerializableDefinitionId? id)

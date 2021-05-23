@@ -235,8 +235,6 @@ namespace avaness.GridSpawner.Grids
             bool complete;
             foreach(ScreenItem item in CountAllComponents(inventories, out complete))
             {
-                if(item.Count < item.Required)
-
                 sb.Append(item.Name).Append(": ").Append(item.Count).Append('/').Append(item.Required).AppendLine();
             }
 
