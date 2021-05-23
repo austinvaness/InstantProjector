@@ -1,19 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Definitions xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
 	<CubeBlocks>
-		<Definition xsi:type="MyObjectBuilder_ProjectorDefinition">
-			<Id>
-				<TypeId>MyObjectBuilder_Projector</TypeId>
-				<SubtypeId>OverlordProjector</SubtypeId>
-			</Id>
-			<DisplayName>Overlord Admin Projector</DisplayName>
+    <Definition xsi:type="MyObjectBuilder_ProjectorDefinition">
+      <Id>
+        <TypeId>Projector</TypeId>
+        <SubtypeId>OverlordProjector</SubtypeId>
+      </Id>
+      <DisplayName>Overlord Admin Projector</DisplayName>
       <Icon>Textures\GUI\Icons\Cubes\Console.dds</Icon>
-			<Description>Instant Projector</Description>
-			<CubeSize>Large</CubeSize>
-			<BlockTopology>TriangleMesh</BlockTopology>
-			<Size x="1" y="1" z="1"/>
-			<ModelOffset x="0" y="0" z="0"/>
-			<Model>Models\Cubes\Large\Projector.mwm</Model>
+      <Description>Instant Projector</Description>
+      <CubeSize>Large</CubeSize>
+      <BlockTopology>TriangleMesh</BlockTopology>
+      <Size x="1" y="1" z="1" />
+      <Model>Models\Cubes\Large\Console.mwm</Model>
+      <ModelOffset x="0" y="0" z="0" />
       <Components>
         <Component Subtype="InteriorPlate" Count="20" />
         <Component Subtype="Construction" Count="20" />
@@ -30,6 +30,12 @@
         <Model BuildPercentUpperBound="0.66" File="Models\Cubes\Large\ConsoleConstruction_2.mwm" />
         <Model BuildPercentUpperBound="1.00" File="Models\Cubes\Large\ConsoleConstruction_3.mwm" />
       </BuildProgressModels>
+      <ScreenAreas>
+        <ScreenArea Name="CockpitScreen_01" DisplayName="DisplayName_Screen_ProjectionArea" TextureResolution="512" ScreenWidth="1" ScreenHeight="1" />
+        <ScreenArea Name="CockpitScreen_02" DisplayName="DisplayName_Screen_Large" TextureResolution="256" ScreenWidth="16" ScreenHeight="11" />
+        <ScreenArea Name="CockpitScreen_03" DisplayName="DisplayName_Screen_Numpad" TextureResolution="128" ScreenWidth="4" ScreenHeight="6" />
+        <ScreenArea Name="CockpitScreen_04" DisplayName="DisplayName_Screen_Keyboard"  TextureResolution="128" ScreenWidth="2" ScreenHeight="1"/>
+      </ScreenAreas>
       <BlockPairName>Console</BlockPairName>
       <MirroringZ>Y</MirroringZ>
       <MirroringY>Z</MirroringY>
@@ -48,6 +54,6 @@
       <AllowScaling>true</AllowScaling>
       <IgnoreSize>true</IgnoreSize>
       <RotationAngleStepDeg>1</RotationAngleStepDeg>
-		</Definition>
+    </Definition>
 	</CubeBlocks>
 </Definitions>
