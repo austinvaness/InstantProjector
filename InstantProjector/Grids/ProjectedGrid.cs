@@ -103,7 +103,12 @@ namespace avaness.GridSpawner.Grids
             {
                 long temp = MyAPIGateway.Players.TryGetIdentityId(activator);
                 if (temp != 0)
-                    owner = new MyIDModule(temp, owner.ShareMode);
+                {
+                    if (owner.ShareMode == MyOwnershipShareModeEnum.All)
+                        owner = new MyIDModule(temp, MyOwnershipShareModeEnum.Faction);
+                    else
+                        owner = new MyIDModule(temp, owner.ShareMode);
+                }
             }
 
             foreach (MyObjectBuilder_CubeGrid grid in grids)
