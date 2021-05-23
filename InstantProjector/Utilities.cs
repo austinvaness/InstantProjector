@@ -89,7 +89,7 @@ namespace avaness.GridSpawner
 
         public static void RefreshUI(IMyTerminalBlock block)
         {
-            //block.RefreshCustomInfo();
+            block.RefreshCustomInfo();
 
             MyCubeBlock cube = (MyCubeBlock)block;
             if (cube.IDModule == null || Constants.IsDedicated || MyAPIGateway.Gui.GetCurrentScreen != MyTerminalPageEnum.ControlPanel)
