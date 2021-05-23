@@ -601,7 +601,11 @@ namespace avaness.GridSpawner
                 GridComponents comps = block.GameLogic.GetAs<InstantProjector>().GetComponents();
                 foreach (KeyValuePair<MyDefinitionId, int> kv in comps)
                 {
-                    sb.Append(kv.Key.SubtypeName).Append(": ").Append(kv.Value);
+                    if (IPSession.Instance != null)
+                        sb.Append(IPSession.Instance.GetComponentName(kv.Key));
+                    else
+                        sb.Append(kv.Key.SubtypeName);
+                    sb.Append(": ").Append(kv.Value);
                     MyStringId s = MyStringId.GetOrCompute(sb.ToString());
                     MyTerminalControlListBoxItem item = new MyTerminalControlListBoxItem(s, s, 0);
                     items.Add(item);
