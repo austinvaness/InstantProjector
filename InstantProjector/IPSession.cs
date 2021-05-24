@@ -3,6 +3,7 @@ using avaness.GridSpawner.Settings;
 using Sandbox.Definitions;
 using Sandbox.ModAPI;
 using Sandbox.ModAPI.Interfaces.Terminal;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -28,6 +29,8 @@ namespace avaness.GridSpawner
         private SettingsHud hud;
         private SettingsChat chat;
         private readonly Dictionary<string, string> physicalItemNames = new Dictionary<string, string>();
+        private readonly HashSet<string> allowedProjectorControls = new HashSet<string>(new[] { "Blueprint", "Remove", "X", "Y", "Z", "RotX", "RotY", "RotZ", "Scale", "BuildGridSep", "BuildGridLabel", "BuildGrid", "CancelBuildGrid", "MoveProjectionArea", "GridTimer", "ComponentList", "ComponentListInfo" });
+
 
         public string GetComponentName(MyDefinitionId id)
         {
@@ -147,6 +150,7 @@ namespace avaness.GridSpawner
             Net.AddFactory(new SyncableProjectorState());
             Net.AddFactory(new SyncableProjectorSettings());
             MyAPIGateway.TerminalControls.CustomActionGetter += RemoveVanillaSpawnAction;
+            MyAPIGateway.TerminalControls.CustomControlGetter += WhitelistAdminControls;
             MyLog.Default.WriteLineAndConsole("Instant Projector initialized.");
             init = true;
         }
@@ -157,6 +161,7 @@ namespace avaness.GridSpawner
             hud?.Unload();
             Net?.Unload();
             MyAPIGateway.TerminalControls.CustomActionGetter -= RemoveVanillaSpawnAction;
+            MyAPIGateway.TerminalControls.CustomControlGetter -= WhitelistAdminControls;
             foreach (Syncable s in Syncable.Values.ToArray())
                 s.Close();
             Instance = null;
@@ -188,6 +193,19 @@ namespace avaness.GridSpawner
                         actions.RemoveAt(i);
                         return;
                     }
+                }
+            }
+        }
+
+        private void WhitelistAdminControls(IMyTerminalBlock block, List<IMyTerminalControl> controls)
+        {
+            if (block is IMyProjector && block.GameLogic.GetAs<InstantProjector>() != null && block.BlockDefinition.SubtypeName == "OverlordProjector")
+            {
+                for (int i = controls.Count - 1; i >= 0; i--)
+                {
+                    IMyTerminalControl c = (IMyTerminalControl)controls[i];
+                    if (!allowedProjectorControls.Contains(c.Id))
+                        controls.RemoveAt(i);
                 }
             }
         }
