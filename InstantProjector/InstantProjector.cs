@@ -297,16 +297,6 @@ namespace avaness.GridSpawner
                         else
                             msg += ".";
                         pending.Notify(msg, 10);
-
-                        pending.UpdateBounds();
-                        IMyEntity e = pending.GetOverlappingEntity();
-                        if (e != null)
-                            Utilities.Notify(Utilities.GetOverlapString(false, e), pending.Activator, 10);
-
-                        int needed;
-                        MyDefinitionId neededId;
-                        if (!pending.HasComponents(out needed, out neededId))
-                            Utilities.Notify(Utilities.GetCompsString(needed, neededId), pending.Activator, 10);
                     }
                 }
                 RefreshUI();
