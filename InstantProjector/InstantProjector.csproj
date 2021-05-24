@@ -146,6 +146,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include=".editorconfig" />
+    <None Include="Workshop\Data\Components.sbc" />
     <None Include="Workshop\Data\CubeBlocks_OverlordProjector.sbc" />
     <None Include="Workshop\Data\EntityComponents.sbc" />
   </ItemGroup>
