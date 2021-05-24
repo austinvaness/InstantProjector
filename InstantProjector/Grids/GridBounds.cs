@@ -108,8 +108,7 @@ namespace avaness.GridSpawner.Grids
         {
             foreach(MyOrientedBoundingBoxD obb in obbs)
             {
-                BoundingSphereD worldVol = new BoundingSphereD(obb.Center, obb.HalfExtent.Length());
-                IMyEntity e = GetOverlappingEntity(obb, worldVol, entityIds);
+                IMyEntity e = GetOverlappingEntity(obb, entityIds);
                 if (e != null)
                     return e;
             }
@@ -119,12 +118,11 @@ namespace avaness.GridSpawner.Grids
         public static IMyEntity GetOverlappingEntity(IMyEntity e)
         {
             MyOrientedBoundingBoxD obb;
-            BoundingSphereD bs;
-            GetOBB(e, out obb, out bs);
-            return GetOverlappingEntity(obb, bs);
+            GetOBB(e, out obb);
+            return GetOverlappingEntity(obb);
         }
 
-        private static IMyEntity GetOverlappingEntity(MyOrientedBoundingBoxD obb, BoundingSphereD bs, HashSet<long> entityIds = null)
+        private static IMyEntity GetOverlappingEntity(MyOrientedBoundingBoxD obb, HashSet<long> entityIds = null)
         {
             BoundingBoxD localAABB = new BoundingBoxD(-obb.HalfExtent, obb.HalfExtent);
             MatrixD localAABBOrientation = MatrixD.CreateFromQuaternion(obb.Orientation);
@@ -141,7 +139,7 @@ namespace avaness.GridSpawner.Grids
                     {
                         if (e is IMyCubeGrid)
                         {
-                            if ((entityIds == null || !entityIds.Contains(e.EntityId)) && HasBlocksInsideSphere((MyCubeGrid)e, ref bs))
+                            if ((entityIds == null || !entityIds.Contains(e.EntityId)) && HasBlocksInside((MyCubeGrid)e, ref obb))
                                 return e;
                         }
                         else if (e is MyVoxelBase)
@@ -152,8 +150,7 @@ namespace avaness.GridSpawner.Grids
                         else
                         {
                             MyOrientedBoundingBoxD eObb;
-                            BoundingSphereD eBs;
-                            GetOBB(e, out eObb, out eBs);
+                            GetOBB(e, out eObb);
                             if (eObb.Contains(ref obb) != ContainmentType.Disjoint)
                                 return e;
                         }
@@ -179,46 +176,51 @@ namespace avaness.GridSpawner.Grids
 
         // Context: Server
         // https://github.com/rexxar-tc/ShipyardMod/blob/master/ShipyardMod/Utility/MathUtility.cs#L66
-        private static void GetOBB(IMyEntity e, out MyOrientedBoundingBoxD obb, out BoundingSphereD bs)
+        private static void GetOBB(IMyEntity e, out MyOrientedBoundingBoxD obb)
         {
             Quaternion quat = Quaternion.CreateFromRotationMatrix(e.WorldMatrix);
             Vector3D exts = e.PositionComp.LocalAABB.HalfExtents;
             obb = new MyOrientedBoundingBoxD(e.PositionComp.WorldAABB.Center, exts, quat);
-            bs = new BoundingSphereD(obb.Center, exts.Length());
         }
 
-        private static bool HasBlocksInsideSphere(MyCubeGrid grid, ref BoundingSphereD sphere)
+        private static bool HasBlocksInside(MyCubeGrid grid, ref MyOrientedBoundingBoxD obb)
         {
-            var radius = sphere.Radius;
+            Vector3I center = grid.WorldToGridInteger(obb.Center);
+            double radius = obb.HalfExtent.Length();
             radius *= grid.GridSizeR;
-            var center = grid.WorldToGridInteger(sphere.Center);
-            var gridMin = grid.Min;
-            var gridMax = grid.Max;
+            Vector3I gridMin = grid.Min;
+            Vector3I gridMax = grid.Max;
             double radiusSq = radius * radius;
             int radiusCeil = (int)Math.Ceiling(radius);
-            int i, j, k;
-            Vector3I max2 = Vector3I.Min(Vector3I.One * radiusCeil, gridMax - center);
-            Vector3I min2 = Vector3I.Max(Vector3I.One * -radiusCeil, gridMin - center);
-            for (i = min2.X; i <= max2.X; ++i)
-            {
-                for (j = min2.Y; j <= max2.Y; ++j)
-                {
-                    for (k = min2.Z; k <= max2.Z; ++k)
-                    {
-                        if (i * i + j * j + k * k < radiusSq)
-                        {
-                            MyCube cube;
-                            var vector3I = center + new Vector3I(i, j, k);
 
-                            if (grid.TryGetCube(vector3I, out cube))
-                            {
-                                var slim = (IMySlimBlock)cube.CubeBlock;
-                                if (slim.Position == vector3I && !slim.IsDestroyed)
-                                {
-                                    return true;
-                                }
-                            }
-                        }
+            BoundingSphereD cubeSphere = new BoundingSphereD(new Vector3D(), grid.GridSizeHalf * Math.Sqrt(3));
+
+            Vector3I max = Vector3I.Min(Vector3I.One * radiusCeil, gridMax - center);
+            Vector3I min = Vector3I.Max(Vector3I.One * -radiusCeil, gridMin - center);
+            int x, y, z;
+            for (x = min.X; x <= max.X; ++x)
+            {
+                for (y = min.Y; y <= max.Y; ++y)
+                {
+                    for (z = min.Z; z <= max.Z; ++z)
+                    {
+                        if (x * x + y * y + z * z >= radiusSq)
+                            continue;
+
+                        Vector3I offset = new Vector3I(x, y, z);
+
+                        Vector3I cubePos = center + offset;
+                        MyCube cube;
+                        if (!grid.TryGetCube(cubePos, out cube))
+                            continue;
+
+                        IMySlimBlock slim = cube.CubeBlock;
+                        if (slim.IsDestroyed)
+                            continue;
+
+                        cubeSphere.Center = grid.GridIntegerToWorld(cubePos);
+                        if (obb.Contains(ref cubeSphere) != ContainmentType.Disjoint)
+                            return true;
                     }
                 }
             }
