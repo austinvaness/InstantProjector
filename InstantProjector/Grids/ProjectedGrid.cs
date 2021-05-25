@@ -121,7 +121,12 @@ namespace avaness.GridSpawner.Grids
                     return false;
                 }
 
-                PrepBlocks(rand, activator, owner, grid, comps);
+                PrepBlocks(rand, owner, grid, comps);
+                if(grid.CubeBlocks.Count == 0)
+                {
+                    Utilities.Notify(Constants.msgGridSmall, activator);
+                    return false;
+                }
 
                 grid.IsStatic = false;
                 grid.CreatePhysics = true;
@@ -173,22 +178,26 @@ namespace avaness.GridSpawner.Grids
             return true;
         }
 
-        private static bool PrepBlocks(Random rand, ulong activator, MyIDModule owner, MyObjectBuilder_CubeGrid grid, GridComponents comps)
+        private static void PrepBlocks(Random rand, MyIDModule owner, MyObjectBuilder_CubeGrid grid, GridComponents comps)
         {
-            foreach (MyObjectBuilder_CubeBlock cubeBuilder in grid.CubeBlocks)
+            for (int i = grid.CubeBlocks.Count - 1; i >= 0; i--)
             {
+                MyObjectBuilder_CubeBlock cubeBuilder = grid.CubeBlocks[i];
                 if (cubeBuilder.EntityId == 0)
                 {
                     if (!Utilities.RandomEntityId(rand, out cubeBuilder.EntityId))
-                        return false;
+                    {
+                        grid.CubeBlocks.RemoveAtFast(i);
+                        continue;
+                    }
                 }
 
                 cubeBuilder.SetupForProjector();
                 MyCubeBlockDefinition def = MyDefinitionManager.Static.GetCubeBlockDefinition(cubeBuilder);
                 if(def == null)
                 {
-                    Utilities.Notify(Constants.msgUnknownBlock, activator);
-                    return false;
+                    grid.CubeBlocks.RemoveAtFast(i);
+                    continue;
                 }
 
                 if(comps != null)
@@ -213,7 +222,6 @@ namespace avaness.GridSpawner.Grids
                 }
             }
 
-            return true;
         }
 
         private static int FindLargest(List<MyObjectBuilder_CubeGrid> grids)
