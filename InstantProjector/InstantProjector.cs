@@ -4,6 +4,7 @@ using Sandbox.Common.ObjectBuilders;
 using Sandbox.Definitions;
 using Sandbox.Game.EntityComponents;
 using Sandbox.ModAPI;
+using Sandbox.ModAPI.Interfaces;
 using System;
 using System.Text;
 using VRage.Game;
@@ -379,6 +380,7 @@ namespace avaness.GridSpawner
             ProjectedGrid grid;
             if (ProjectedGrid.TryCreate(activator, me, _settings.LooseArea, out grid))
             {
+                me.SetValueFloat("Scale", 1);
                 Timer = GetBlueprintTimer(grid.BlockCount);
                 pending = grid;
                 NeedsUpdate = MyEntityUpdateEnum.EACH_FRAME;

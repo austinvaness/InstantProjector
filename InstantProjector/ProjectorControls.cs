@@ -2,15 +2,11 @@
 using avaness.GridSpawner.Networking;
 using Sandbox.ModAPI;
 using Sandbox.ModAPI.Interfaces.Terminal;
-using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 using VRage.Game;
 using VRage.ModAPI;
 using VRage.Utils;
-using VRageMath;
-using MyItemType = VRage.Game.ModAPI.Ingame.MyItemType;
 
 namespace avaness.GridSpawner
 {
