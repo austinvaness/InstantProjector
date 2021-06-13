@@ -212,6 +212,9 @@ namespace avaness.GridSpawner.Grids
                     ((MyObjectBuilder_AttachableTopBlockBase)cubeBuilder).ParentEntityId = 0;
                 if (cubeBuilder is MyObjectBuilder_MechanicalConnectionBlock)
                     ((MyObjectBuilder_MechanicalConnectionBlock)cubeBuilder).TopBlockId = null;
+                if(cubeBuilder is MyObjectBuilder_MotorBase)
+                    ((MyObjectBuilder_MotorBase)cubeBuilder).RotorEntityId = null;
+
 
                 if (cubeBuilder is MyObjectBuilder_FunctionalBlock)
                     ((MyObjectBuilder_FunctionalBlock)cubeBuilder).Enabled = true;
