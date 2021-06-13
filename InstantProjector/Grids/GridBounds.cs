@@ -108,7 +108,7 @@ namespace avaness.GridSpawner.Grids
         {
             foreach(MyOrientedBoundingBoxD obb in obbs)
             {
-                IMyEntity e = GetOverlappingEntity(obb, entityIds);
+                IMyEntity e = GetOverlappingEntity(obb, null, entityIds);
                 if (e != null)
                     return e;
             }
@@ -119,10 +119,10 @@ namespace avaness.GridSpawner.Grids
         {
             MyOrientedBoundingBoxD obb;
             GetOBB(e, out obb);
-            return GetOverlappingEntity(obb);
+            return GetOverlappingEntity(obb, e);
         }
 
-        private static IMyEntity GetOverlappingEntity(MyOrientedBoundingBoxD obb, HashSet<long> entityIds = null)
+        private static IMyEntity GetOverlappingEntity(MyOrientedBoundingBoxD obb, IMyEntity original = null, HashSet<long> entityIds = null)
         {
             BoundingBoxD localAABB = new BoundingBoxD(-obb.HalfExtent, obb.HalfExtent);
             MatrixD localAABBOrientation = MatrixD.CreateFromQuaternion(obb.Orientation);
@@ -144,7 +144,12 @@ namespace avaness.GridSpawner.Grids
                         }
                         else if (e is MyVoxelBase)
                         {
-                            if(IsCollidingWith((MyVoxelBase)e, localAABB, localAABBOrientation))
+                            if (IsCollidingWith((MyVoxelBase)e, localAABB, localAABBOrientation))
+                                return e;
+                        }
+                        else if (e is MySafeZone)
+                        {
+                            if (!IsAllowed((MySafeZone)e, obb, original))
                                 return e;
                         }
                         else
@@ -159,6 +164,37 @@ namespace avaness.GridSpawner.Grids
             }
             return null;
         }
+
+        private static bool IsAllowed(MySafeZone safezone, MyOrientedBoundingBoxD obb, IMyEntity original = null)
+        {
+            if (!safezone.Enabled)
+                return true;
+
+            if (safezone.AccessTypeGrids == Sandbox.Common.ObjectBuilders.MySafeZoneAccess.Whitelist)
+                return false;
+
+            if(safezone.Shape == Sandbox.Common.ObjectBuilders.MySafeZoneShape.Box)
+            {
+                var zoneOBB = new MyOrientedBoundingBoxD(safezone.PositionComp.LocalAABB, safezone.PositionComp.WorldMatrixRef);
+                if (obb.Contains(ref zoneOBB) == ContainmentType.Disjoint)
+                    return true;
+            }
+            else
+            {
+                var zoneSphere = new BoundingSphereD(safezone.PositionComp.GetPosition(), safezone.Radius);
+                if (obb.Contains(ref zoneSphere) == ContainmentType.Disjoint)
+                    return true;
+            }
+
+            // 512 = VRage.Game.ObjectBuilders.Components.MySafeZoneAction.BuildingProjections
+            if (original == null)
+                return safezone.IsActionAllowed(obb.GetAABB(), CastProhibit(safezone.AllowedActions, 512));
+            return safezone.IsActionAllowed((MyEntity)original, CastProhibit(safezone.AllowedActions, 512));
+        }
+
+        // Hack for MySafeZoneAction because it is not whitelisted
+        // Source: https://discord.com/channels/125011928711036928/126460115204308993/829013796337090561
+        private static T CastProhibit<T>(T ptr, object val) => (T)val;
 
         private static bool IsCollidingWith(MyVoxelBase voxel, BoundingBoxD box, MatrixD orientation)
         {
