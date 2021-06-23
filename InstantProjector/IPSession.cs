@@ -1,5 +1,6 @@
 ﻿using avaness.GridSpawner.Networking;
 using avaness.GridSpawner.Settings;
+using DefenseShields;
 using Sandbox.Definitions;
 using Sandbox.ModAPI;
 using Sandbox.ModAPI.Interfaces.Terminal;
@@ -21,6 +22,7 @@ namespace avaness.GridSpawner
         public int Runtime; // Server only
         public Network Net { get; private set; }
         public Dictionary<long, Syncable> Syncable = new Dictionary<long, Syncable>();
+        internal ShieldApi Shields { get; } = new ShieldApi();
 
         public MapSettings MapSettings { get; } = new MapSettings();
 
@@ -116,6 +118,7 @@ namespace avaness.GridSpawner
         {
             Instance = this;
             Net = new Network();
+            Shields.Load();
         }
 
         private void Start()
@@ -156,6 +159,7 @@ namespace avaness.GridSpawner
             chat?.Unload();
             hud?.Unload();
             Net?.Unload();
+            Shields?.Unload();
             MyAPIGateway.TerminalControls.CustomActionGetter -= RemoveVanillaSpawnAction;
             foreach (Syncable s in Syncable.Values.ToArray())
                 s.Close();

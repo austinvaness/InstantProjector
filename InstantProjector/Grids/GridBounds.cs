@@ -8,6 +8,7 @@ using VRage.Game;
 using VRage.Game.Entity;
 using VRage.Game.ModAPI;
 using VRage.ModAPI;
+using VRage.Utils;
 using VRageMath;
 
 namespace avaness.GridSpawner.Grids
@@ -160,9 +161,37 @@ namespace avaness.GridSpawner.Grids
                                 return e;
                         }
                     }
+                    else if(IsShield(e))
+                    {
+                        IMyCubeGrid shieldGrid;
+                        if (TryGetShieldCollision(e, obb, out shieldGrid))
+                            return shieldGrid;
+                    }
                 }
             }
             return null;
+        }
+
+        private static bool IsShield(IMyEntity e)
+        {
+            return IPSession.Instance.Shields.IsReady && ((MyEntity)e).DefinitionId?.SubtypeId == Constants.DefenseShieldId && e.Render.Visible;
+        }
+
+        private static bool TryGetShieldCollision(IMyEntity shield, MyOrientedBoundingBoxD obb, out IMyCubeGrid shieldGrid)
+        {
+            shieldGrid = null;
+
+            var shieldInfo = IPSession.Instance.Shields.MatchEntToShieldFastExt((MyEntity)shield, true);
+            if (!shieldInfo.HasValue)
+                return false;
+
+            if(Vector3D.Transform(obb.Center, shieldInfo.Value.Item3.Item1).LengthSquared() <= 1)
+            {
+                shieldGrid = shieldInfo.Value.Item1.CubeGrid;
+                return true;
+            }
+
+            return false;
         }
 
         private static bool IsAllowed(MySafeZone safezone, MyOrientedBoundingBoxD obb, IMyEntity original = null)

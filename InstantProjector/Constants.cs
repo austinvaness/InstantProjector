@@ -1,6 +1,7 @@
 ﻿using Sandbox.ModAPI;
 using System;
 using VRage.Game;
+using VRage.Utils;
 
 namespace avaness.GridSpawner
 {
@@ -32,7 +33,7 @@ namespace avaness.GridSpawner
         public const int maxSpeed = 100;
 
         internal const string mapFile = "InstantProjector-Settings.xml";
-
-
+        
+        public static readonly MyStringHash DefenseShieldId = MyStringHash.GetOrCompute("DefenseShield");
     }
 }

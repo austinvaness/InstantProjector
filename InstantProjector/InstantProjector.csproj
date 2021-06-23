@@ -118,6 +118,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ShieldApi.cs" />
     <Compile Include="Constants.cs" />
     <Compile Include="Grids\GridComponents.cs" />
     <Compile Include="Grids\GridBounds.cs" />
