@@ -1,12 +1,11 @@
 ﻿using Sandbox.ModAPI;
-using System.Collections.Generic;
 using VRage.Game.ModAPI;
 
 namespace avaness.GridSpawner
 {
     public class ActivatorInfo
     {
-        private readonly bool empty, isBot;
+        private readonly bool empty;
         private readonly long playerId;
 
         public ActivatorInfo()
@@ -17,36 +16,23 @@ namespace avaness.GridSpawner
         public ActivatorInfo(long playerId)
         {
             this.playerId = playerId;
-
             if (playerId == 0)
-            {
                 empty = true;
-            }
-            else
-            {
-                List<IMyPlayer> players = new List<IMyPlayer>();
-                MyAPIGateway.Players.GetPlayers(players, (p) => p.IdentityId == playerId);
-                if (players.Count > 0 && players[0].IsBot)
-                    isBot = true;
-            }
         }
 
         public bool IsEnemyGrid(IMyCubeGrid grid)
         {
-            if (isBot)
-                return false;
-
             if (empty)
-                return true;
+                return true; // Not enough information so assume the worst
 
             if (grid.BigOwners == null || grid.BigOwners.Count == 0)
-                return false;
+                return false; // Grid is unowned
 
             IMyFaction faction = MyAPIGateway.Session.Factions.TryGetPlayerFaction(playerId);
             if (faction == null)
-                return !grid.BigOwners.Contains(playerId);
+                return !grid.BigOwners.Contains(playerId); // Player has no faction so the grid must be owned by the exact player
 
-            return grid.BigOwners.Exists((p) => faction.IsEnemy(p));
+            return grid.BigOwners.Exists((p) => faction.IsEnemy(p)); // Check if owners of grid are enemies
         }
     }
 }

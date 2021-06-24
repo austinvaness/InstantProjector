@@ -8,7 +8,6 @@ using VRage.Game;
 using VRage.Game.Entity;
 using VRage.Game.ModAPI;
 using VRage.ModAPI;
-using VRage.Utils;
 using VRageMath;
 
 namespace avaness.GridSpawner.Grids
@@ -143,10 +142,7 @@ namespace avaness.GridSpawner.Grids
                             if(entityIds == null || !entityIds.Contains(e.EntityId))
                             {
                                 if (owner.IsEnemyGrid((IMyCubeGrid)e))
-                                {
-                                    MyAPIGateway.Utilities.ShowNotification("Enemy grid!");
                                     return e;
-                                }
 
                                 if (HasBlocksInside((MyCubeGrid)e, ref obb))
                                     return e;
@@ -192,19 +188,19 @@ namespace avaness.GridSpawner.Grids
 
             var shieldInfo = IPSession.Instance.Shields.MatchEntToShieldFastExt((MyEntity)shield, true);
             if (!shieldInfo.HasValue)
-                return false;
+                return false; // No shield
 
             IMyTerminalBlock shieldBlock = shieldInfo.Value.Item1;
-            if (shieldBlock.CubeGrid == null || !owner.IsEnemyGrid(shieldBlock.CubeGrid))
-                return false;
+            if (shieldBlock?.CubeGrid == null || !owner.IsEnemyGrid(shieldBlock.CubeGrid))
+                return false; // Shield grid is not an enemy
 
             if (Vector3D.Transform(obb.Center, shieldInfo.Value.Item3.Item1).LengthSquared() <= 1)
             {
                 shieldGrid = shieldBlock.CubeGrid;
-                return true;
+                return true; // OBB is inside the shield
             }
 
-            return false;
+            return false; // OBB is outside the shield
         }
 
         private static bool IsAllowed(MySafeZone safezone, MyOrientedBoundingBoxD obb, IMyEntity original = null)
