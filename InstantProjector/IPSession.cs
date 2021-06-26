@@ -117,8 +117,21 @@ namespace avaness.GridSpawner
         public override void BeforeStart ()
         {
             Instance = this;
-            Net = new Network();
             Shields.Load();
+            Net = new Network();
+            if (Constants.IsServer)
+            {
+                Net.AddFactory(new PacketBuild());
+                MapSettings.Copy(MapSettings.Load());
+                Net.AddFactory(new PacketSettingsRequest());
+            }
+            else
+            {
+                Net.AddFactory(new MapSettings());
+            }
+            Net.AddFactory(new MapSettings.ValuePacket());
+            Net.AddFactory(new SyncableProjectorState());
+            Net.AddFactory(new SyncableProjectorSettings());
         }
 
         private void Start()
@@ -134,21 +147,16 @@ namespace avaness.GridSpawner
 
             if (Constants.IsServer)
             {
-                Net.AddFactory(new PacketBuild());
-                MapSettings.Copy(MapSettings.Load());
-                Net.AddFactory(new PacketSettingsRequest());
+
             }
             else
             {
-                Net.AddFactory(new MapSettings());
                 new PacketSettingsRequest().SendToServer();
+
             }
             if (MyAPIGateway.Session.Player != null)
                 chat = new SettingsChat();
             hud = new SettingsHud();
-            Net.AddFactory(new MapSettings.ValuePacket());
-            Net.AddFactory(new SyncableProjectorState());
-            Net.AddFactory(new SyncableProjectorSettings());
             MyAPIGateway.TerminalControls.CustomActionGetter += RemoveVanillaSpawnAction;
             MyLog.Default.WriteLineAndConsole("Instant Projector initialized.");
             init = true;
