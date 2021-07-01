@@ -179,28 +179,13 @@ namespace avaness.GridSpawner.Grids
 
         private static bool IsShield(IMyEntity e)
         {
-            return IPSession.Instance.Shields.IsReady && ((MyEntity)e).DefinitionId?.SubtypeId == Constants.DefenseShieldId && e.Render.Visible;
+            return false;
         }
 
         private static bool TryGetShieldCollision(IMyEntity shield, MyOrientedBoundingBoxD obb, ActivatorInfo owner, out IMyCubeGrid shieldGrid)
         {
             shieldGrid = null;
-
-            var shieldInfo = IPSession.Instance.Shields.MatchEntToShieldFastExt((MyEntity)shield, true);
-            if (!shieldInfo.HasValue)
-                return false; // No shield
-
-            IMyTerminalBlock shieldBlock = shieldInfo.Value.Item1;
-            if (shieldBlock?.CubeGrid == null || !owner.IsEnemyGrid(shieldBlock.CubeGrid))
-                return false; // Shield grid is not an enemy
-
-            if (Vector3D.Transform(obb.Center, shieldInfo.Value.Item3.Item1).LengthSquared() <= 1)
-            {
-                shieldGrid = shieldBlock.CubeGrid;
-                return true; // OBB is inside the shield
-            }
-
-            return false; // OBB is outside the shield
+            return false;
         }
 
         private static bool IsAllowed(MySafeZone safezone, MyOrientedBoundingBoxD obb, IMyEntity original = null)
