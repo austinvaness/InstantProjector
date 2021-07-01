@@ -164,7 +164,7 @@ mkdir "Workshop"
 mkdir "%25Appdata%25\SpaceEngineers\Mods\$(ProjectName)\Data\Scripts\$(ProjectName)"
 rclone sync "$(ProjectDir)\" "%25Appdata%25\SpaceEngineers\Mods\$(ProjectName)\Data\Scripts\$(ProjectName)" --filter "- obj/**" --filter "- bin/**" --filter "- **/AssemblyInfo.cs" --filter "+ **.cs" --filter "- *" -v
 rclone sync "$(ProjectDir)\Workshop" "%25Appdata%25\SpaceEngineers\Mods\$(ProjectName)" --exclude "**.cs" -v
-
+exit
 rclone sync "%25Appdata%25\SpaceEngineers\Mods\$(ProjectName)" "C:\Program Files (x86)\Steam\steamapps\workshop\content\244850\2096677783"
 rclone sync "%25Appdata%25\SpaceEngineers\Mods\$(ProjectName)" "D:\Torch\Instance\content\244850\2096677783"</PostBuildEvent>
   </PropertyGroup>
