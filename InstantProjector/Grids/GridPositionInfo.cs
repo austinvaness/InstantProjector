@@ -31,9 +31,6 @@ namespace avaness.GridSpawner.Grids
                 }
                 this.positions = positions.ToArray();
             }
-
-            byte[] data = MyAPIGateway.Utilities.SerializeToBinary(this);
-            MyVisualScriptLogicProvider.SendChatMessage("Length: " + data.Length, "InstantProjector");
         }
 
         public void Apply(List<MyObjectBuilder_CubeGrid> grids)
