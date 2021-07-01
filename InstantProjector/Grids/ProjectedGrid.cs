@@ -1,10 +1,12 @@
 ﻿using Sandbox.Common.ObjectBuilders;
 using Sandbox.Definitions;
+using Sandbox.Game;
 using Sandbox.Game.Entities;
 using Sandbox.ModAPI;
 using Sandbox.ModAPI.Interfaces;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using VRage;
 using VRage.Game;
 using VRage.Game.ModAPI;
@@ -43,7 +45,7 @@ namespace avaness.GridSpawner.Grids
             this.owner = owner;
         }
 
-        public static bool TryCreate(ulong activator, IMyProjector p, bool shiftBuildArea, out ProjectedGrid projectedGrid)
+        public static bool TryCreate(ulong activator, IMyProjector p, bool shiftBuildArea, GridPositionInfo positionFix, out ProjectedGrid projectedGrid)
         {
             projectedGrid = null;
 
@@ -69,6 +71,7 @@ namespace avaness.GridSpawner.Grids
 
             // Prepare list of grids
             List<MyObjectBuilder_CubeGrid> grids = pBuilder.ProjectedGrids;
+            positionFix?.Apply(grids);
             int largestIndex = FindLargest(grids);
 
             MyObjectBuilder_CubeGrid largestGrid = grids[largestIndex];
@@ -136,6 +139,7 @@ namespace avaness.GridSpawner.Grids
                 grid.DestructibleBlocks = true;
 
                 MatrixD current = grid.PositionAndOrientation.Value.GetMatrix();
+
                 if (scale != 1)
                     current.Translation /= scale;
 

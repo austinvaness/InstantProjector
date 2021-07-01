@@ -1,5 +1,6 @@
 ﻿using avaness.GridSpawner.Grids;
 using avaness.GridSpawner.Networking;
+using Sandbox.Common.ObjectBuilders;
 using Sandbox.ModAPI;
 using Sandbox.ModAPI.Interfaces.Terminal;
 using System;
@@ -326,7 +327,17 @@ namespace avaness.GridSpawner
             if (MyAPIGateway.Session == null || !block.IsWorking)
                 return;
 
-            new PacketBuild(block, true, false).SendToServer();
+            IMyProjector p = (IMyProjector)block;
+
+            List<MyObjectBuilder_CubeGrid> grids = null;
+            if (Utilities.SupportsSubgrids(p))
+            {
+                MyObjectBuilder_Projector pBuilder = (MyObjectBuilder_Projector)p.GetObjectBuilderCubeBlock(true);
+                if (pBuilder != null && pBuilder.ProjectedGrids.Count > 1)
+                    grids = pBuilder.ProjectedGrids;
+            }
+
+            new PacketBuild(block, true, false, grids).SendToServer();
         }
 
         private static void BuildClientUnsafe(IMyTerminalBlock block)
