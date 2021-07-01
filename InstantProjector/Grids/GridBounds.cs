@@ -104,25 +104,25 @@ namespace avaness.GridSpawner.Grids
             return cube.Min + result;
         }
 
-        public IMyEntity GetOverlappingEntity()
+        public IMyEntity GetOverlappingEntity(ActivatorInfo owner)
         {
             foreach(MyOrientedBoundingBoxD obb in obbs)
             {
-                IMyEntity e = GetOverlappingEntity(obb, null, entityIds);
+                IMyEntity e = GetOverlappingEntity(obb, owner, null, entityIds);
                 if (e != null)
                     return e;
             }
             return null;
         }
 
-        public static IMyEntity GetOverlappingEntity(IMyEntity e)
+        public static IMyEntity GetOverlappingEntity(IMyEntity e, ActivatorInfo owner)
         {
             MyOrientedBoundingBoxD obb;
             GetOBB(e, out obb);
-            return GetOverlappingEntity(obb, e);
+            return GetOverlappingEntity(obb, owner, e);
         }
 
-        private static IMyEntity GetOverlappingEntity(MyOrientedBoundingBoxD obb, IMyEntity original = null, HashSet<long> entityIds = null)
+        private static IMyEntity GetOverlappingEntity(MyOrientedBoundingBoxD obb, ActivatorInfo owner, IMyEntity original = null, HashSet<long> entityIds = null)
         {
             BoundingBoxD localAABB = new BoundingBoxD(-obb.HalfExtent, obb.HalfExtent);
             MatrixD localAABBOrientation = MatrixD.CreateFromQuaternion(obb.Orientation);
@@ -139,8 +139,14 @@ namespace avaness.GridSpawner.Grids
                     {
                         if (e is IMyCubeGrid)
                         {
-                            if ((entityIds == null || !entityIds.Contains(e.EntityId)) && HasBlocksInside((MyCubeGrid)e, ref obb))
-                                return e;
+                            if(entityIds == null || !entityIds.Contains(e.EntityId))
+                            {
+                                if (owner.IsEnemyGrid((IMyCubeGrid)e))
+                                    return e;
+
+                                if (HasBlocksInside((MyCubeGrid)e, ref obb))
+                                    return e;
+                            }
                         }
                         else if (e is MyVoxelBase)
                         {
@@ -160,9 +166,41 @@ namespace avaness.GridSpawner.Grids
                                 return e;
                         }
                     }
+                    else if(IsShield(e))
+                    {
+                        IMyCubeGrid shieldGrid;
+                        if (TryGetShieldCollision(e, obb, owner, out shieldGrid))
+                            return shieldGrid;
+                    }
                 }
             }
             return null;
+        }
+
+        private static bool IsShield(IMyEntity e)
+        {
+            return IPSession.Instance.Shields.IsReady && ((MyEntity)e).DefinitionId?.SubtypeId == Constants.DefenseShieldId && e.Render.Visible;
+        }
+
+        private static bool TryGetShieldCollision(IMyEntity shield, MyOrientedBoundingBoxD obb, ActivatorInfo owner, out IMyCubeGrid shieldGrid)
+        {
+            shieldGrid = null;
+
+            var shieldInfo = IPSession.Instance.Shields.MatchEntToShieldFastExt((MyEntity)shield, true);
+            if (!shieldInfo.HasValue)
+                return false; // No shield
+
+            IMyTerminalBlock shieldBlock = shieldInfo.Value.Item1;
+            if (shieldBlock?.CubeGrid == null || !owner.IsEnemyGrid(shieldBlock.CubeGrid))
+                return false; // Shield grid is not an enemy
+
+            if (Vector3D.Transform(obb.Center, shieldInfo.Value.Item3.Item1).LengthSquared() <= 1)
+            {
+                shieldGrid = shieldBlock.CubeGrid;
+                return true; // OBB is inside the shield
+            }
+
+            return false; // OBB is outside the shield
         }
 
         private static bool IsAllowed(MySafeZone safezone, MyOrientedBoundingBoxD obb, IMyEntity original = null)

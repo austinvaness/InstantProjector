@@ -1,10 +1,12 @@
 ﻿using Sandbox.Common.ObjectBuilders;
 using Sandbox.Definitions;
+using Sandbox.Game;
 using Sandbox.Game.Entities;
 using Sandbox.ModAPI;
 using Sandbox.ModAPI.Interfaces;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using VRage;
 using VRage.Game;
 using VRage.Game.ModAPI;
@@ -25,11 +27,12 @@ namespace avaness.GridSpawner.Grids
         private readonly IMyProjector p;
         private readonly GridOrientation finalOrientation;
         private readonly bool shiftBuildArea;
+        private readonly ActivatorInfo owner;
 
         private ParallelSpawner spawner;
         private Action onDone;
 
-        private ProjectedGrid(ulong activator, IMyProjector p, List<MyObjectBuilder_CubeGrid> grids, GridBounds bounds, GridComponents comps, GridOrientation orientation, bool shiftBuildArea, int blockCount)
+        private ProjectedGrid(ulong activator, IMyProjector p, List<MyObjectBuilder_CubeGrid> grids, GridBounds bounds, GridComponents comps, GridOrientation orientation, bool shiftBuildArea, int blockCount, ActivatorInfo owner)
         {
             Activator = activator;
             BlockCount = blockCount;
@@ -39,9 +42,10 @@ namespace avaness.GridSpawner.Grids
             this.comps = comps;
             finalOrientation = orientation;
             this.shiftBuildArea = shiftBuildArea;
+            this.owner = owner;
         }
 
-        public static bool TryCreate(ulong activator, IMyProjector p, bool shiftBuildArea, out ProjectedGrid projectedGrid)
+        public static bool TryCreate(ulong activator, IMyProjector p, bool shiftBuildArea, GridPositionInfo positionFix, out ProjectedGrid projectedGrid)
         {
             projectedGrid = null;
 
@@ -67,6 +71,7 @@ namespace avaness.GridSpawner.Grids
 
             // Prepare list of grids
             List<MyObjectBuilder_CubeGrid> grids = pBuilder.ProjectedGrids;
+            positionFix?.Apply(grids);
             int largestIndex = FindLargest(grids);
 
             MyObjectBuilder_CubeGrid largestGrid = grids[largestIndex];
@@ -102,7 +107,7 @@ namespace avaness.GridSpawner.Grids
             if (activator != 0)
             {
                 long temp = MyAPIGateway.Players.TryGetIdentityId(activator);
-                if (temp != 0)
+                if(temp != 0)
                 {
                     if (owner.ShareMode == MyOwnershipShareModeEnum.All)
                         owner = new MyIDModule(temp, MyOwnershipShareModeEnum.Faction);
@@ -134,6 +139,7 @@ namespace avaness.GridSpawner.Grids
                 grid.DestructibleBlocks = true;
 
                 MatrixD current = grid.PositionAndOrientation.Value.GetMatrix();
+
                 if (scale != 1)
                     current.Translation /= scale;
 
@@ -167,14 +173,16 @@ namespace avaness.GridSpawner.Grids
 
 
             GridBounds bounds = new GridBounds(p, grids);
-            IMyEntity e = bounds.GetOverlappingEntity();
+            ActivatorInfo ownerInfo = new ActivatorInfo(owner.Owner);
+            ownerInfo.Whitelist(p.CubeGrid); // In cases where the projector is a shared projector station, it needs to be whitelisted.
+            IMyEntity e = bounds.GetOverlappingEntity(ownerInfo);
             if (e != null && (!shiftBuildArea || !bounds.HasClearArea()))
             {
                 Utilities.Notify(Utilities.GetOverlapString(true, e), activator);
                 return false;
             }
 
-            projectedGrid = new ProjectedGrid(activator, p, grids, bounds, comps, orientation, shiftBuildArea, totalBlocks);
+            projectedGrid = new ProjectedGrid(activator, p, grids, bounds, comps, orientation, shiftBuildArea, totalBlocks, ownerInfo);
             return true;
         }
 
@@ -254,7 +262,7 @@ namespace avaness.GridSpawner.Grids
         public bool Spawn(Action onDone)
         {
             bounds.Update();
-            IMyEntity e = bounds.GetOverlappingEntity();
+            IMyEntity e = bounds.GetOverlappingEntity(owner);
             if (e != null)
             {
                 if (shiftBuildArea)
@@ -314,7 +322,7 @@ namespace avaness.GridSpawner.Grids
                 }
 
                 gridIds.Add(grid.EntityId);
-                IMyEntity e = GridBounds.GetOverlappingEntity(grid);
+                IMyEntity e = GridBounds.GetOverlappingEntity(grid, owner);
                 if (e != null)
                 {
                     Utilities.Notify(Utilities.GetOverlapString(true, e), Activator);
@@ -363,7 +371,7 @@ namespace avaness.GridSpawner.Grids
 
         public IMyEntity GetOverlappingEntity()
         {
-            return bounds.GetOverlappingEntity();
+            return bounds.GetOverlappingEntity(owner);
         }
 
         public bool HasComponents(out int neededCount, out MyDefinitionId neededId)

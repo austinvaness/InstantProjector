@@ -360,7 +360,7 @@ namespace avaness.GridSpawner
         }
 
         // Context: Server
-        public void BuildServer (ulong activator, bool trustSender)
+        public void BuildServer (ulong activator, bool trustSender, GridPositionInfo positionFix)
         {
             if (!trustSender && MyAPIGateway.Session.Player?.SteamUserId == activator)
                 activator = 0;
@@ -371,14 +371,14 @@ namespace avaness.GridSpawner
             else if (BuildState == ProjectorState.Waiting)
                 Utilities.Notify(Constants.msgWaiting, activator);
             else if (BuildState == ProjectorState.Idle)
-                InstantSpawn(activator);
+                InstantSpawn(activator, positionFix);
         }
 
         // Context: Server
-        private void InstantSpawn (ulong activator)
+        private void InstantSpawn (ulong activator, GridPositionInfo positionFix)
         {
             ProjectedGrid grid;
-            if (ProjectedGrid.TryCreate(activator, me, _settings.LooseArea, out grid))
+            if (ProjectedGrid.TryCreate(activator, me, _settings.LooseArea, positionFix, out grid))
             {
                 me.SetValueFloat("Scale", 1);
                 Timer = GetBlueprintTimer(grid.BlockCount);

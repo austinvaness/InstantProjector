@@ -1,5 +1,8 @@
-﻿using ProtoBuf;
+﻿using avaness.GridSpawner.Grids;
+using ProtoBuf;
 using Sandbox.ModAPI;
+using System.Collections.Generic;
+using VRage.Game;
 
 namespace avaness.GridSpawner.Networking
 {
@@ -12,13 +15,15 @@ namespace avaness.GridSpawner.Networking
         public long entityId;
         [ProtoMember(2)]
         public byte data;
-        
+        [ProtoMember(3)]
+        public GridPositionInfo positionFix;
+
         public PacketBuild()
         {
 
         }
 
-        public PacketBuild (IMyTerminalBlock projector, bool trustSender, bool cancel)
+        public PacketBuild (IMyTerminalBlock projector, bool trustSender, bool cancel, List<MyObjectBuilder_CubeGrid> grids = null)
         {
             entityId = projector.EntityId;
             data = 0;
@@ -26,6 +31,8 @@ namespace avaness.GridSpawner.Networking
                 data |= 1;
             if (cancel)
                 data |= 2;
+            if(grids != null && trustSender)
+                positionFix = new GridPositionInfo(grids);
         }
 
 
@@ -47,7 +54,7 @@ namespace avaness.GridSpawner.Networking
                     if (cancel)
                         gl.CancelServer(sender, trustSender);
                     else
-                        gl.BuildServer(sender, trustSender);
+                        gl.BuildServer(sender, trustSender, positionFix);
                 }
             }
         }

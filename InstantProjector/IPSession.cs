@@ -1,5 +1,6 @@
 ﻿using avaness.GridSpawner.Networking;
 using avaness.GridSpawner.Settings;
+using DefenseShields;
 using Sandbox.Definitions;
 using Sandbox.ModAPI;
 using Sandbox.ModAPI.Interfaces.Terminal;
@@ -22,6 +23,7 @@ namespace avaness.GridSpawner
         public int Runtime; // Server only
         public Network Net { get; private set; }
         public Dictionary<long, Syncable> Syncable = new Dictionary<long, Syncable>();
+        internal ShieldApi Shields { get; } = new ShieldApi();
 
         public MapSettings MapSettings { get; } = new MapSettings();
 
@@ -118,7 +120,21 @@ namespace avaness.GridSpawner
         public override void BeforeStart ()
         {
             Instance = this;
+            Shields.Load();
             Net = new Network();
+            if (Constants.IsServer)
+            {
+                Net.AddFactory(new PacketBuild());
+                MapSettings.Copy(MapSettings.Load());
+                Net.AddFactory(new PacketSettingsRequest());
+            }
+            else
+            {
+                Net.AddFactory(new MapSettings());
+            }
+            Net.AddFactory(new MapSettings.ValuePacket());
+            Net.AddFactory(new SyncableProjectorState());
+            Net.AddFactory(new SyncableProjectorSettings());
         }
 
         private void Start()
@@ -134,21 +150,16 @@ namespace avaness.GridSpawner
 
             if (Constants.IsServer)
             {
-                Net.AddFactory(new PacketBuild());
-                MapSettings.Copy(MapSettings.Load());
-                Net.AddFactory(new PacketSettingsRequest());
+
             }
             else
             {
-                Net.AddFactory(new MapSettings());
                 new PacketSettingsRequest().SendToServer();
+
             }
             if (MyAPIGateway.Session.Player != null)
                 chat = new SettingsChat();
             hud = new SettingsHud();
-            Net.AddFactory(new MapSettings.ValuePacket());
-            Net.AddFactory(new SyncableProjectorState());
-            Net.AddFactory(new SyncableProjectorSettings());
             MyAPIGateway.TerminalControls.CustomActionGetter += RemoveVanillaSpawnAction;
             MyAPIGateway.TerminalControls.CustomControlGetter += WhitelistAdminControls;
             MyLog.Default.WriteLineAndConsole("Instant Projector initialized.");
@@ -160,6 +171,7 @@ namespace avaness.GridSpawner
             chat?.Unload();
             hud?.Unload();
             Net?.Unload();
+            Shields?.Unload();
             MyAPIGateway.TerminalControls.CustomActionGetter -= RemoveVanillaSpawnAction;
             MyAPIGateway.TerminalControls.CustomControlGetter -= WhitelistAdminControls;
             foreach (Syncable s in Syncable.Values.ToArray())
