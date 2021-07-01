@@ -1,4 +1,5 @@
 ﻿using Sandbox.ModAPI;
+using System.Collections.Generic;
 using VRage.Game.ModAPI;
 
 namespace avaness.GridSpawner
@@ -7,6 +8,7 @@ namespace avaness.GridSpawner
     {
         private readonly bool empty;
         private readonly long playerId;
+        private readonly HashSet<long> whitelist = new HashSet<long>();
 
         public ActivatorInfo()
         {
@@ -20,8 +22,16 @@ namespace avaness.GridSpawner
                 empty = true;
         }
 
+        public void Whitelist(IMyCubeGrid grid)
+        {
+            whitelist.Add(grid.EntityId);
+        }
+
         public bool IsEnemyGrid(IMyCubeGrid grid)
         {
+            if (whitelist.Contains(grid.EntityId))
+                return false;
+
             if (empty)
                 return true; // Not enough information so assume the worst
 

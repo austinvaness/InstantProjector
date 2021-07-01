@@ -174,6 +174,7 @@ namespace avaness.GridSpawner.Grids
 
             GridBounds bounds = new GridBounds(p, grids);
             ActivatorInfo ownerInfo = new ActivatorInfo(owner.Owner);
+            ownerInfo.Whitelist(p.CubeGrid); // In cases where the projector is a shared projector station, it needs to be whitelisted.
             IMyEntity e = bounds.GetOverlappingEntity(ownerInfo);
             if (e != null && (!shiftBuildArea || !bounds.HasClearArea()))
             {
