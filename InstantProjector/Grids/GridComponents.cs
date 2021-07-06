@@ -15,6 +15,7 @@ namespace avaness.GridSpawner.Grids
     {
         public int BlockCount { get; private set; } = 0;
 
+        private bool warnSubgrids = false;
         private Dictionary<MyDefinitionId, int> comps = new Dictionary<MyDefinitionId, int>();
 
         public GridComponents()
@@ -27,7 +28,10 @@ namespace avaness.GridSpawner.Grids
             List<IMySlimBlock> temp = new List<IMySlimBlock>(0);
             grid.GetBlocks(temp, (slim) =>
             {
-                Include((MyCubeBlockDefinition)slim.BlockDefinition);
+                MyCubeBlockDefinition def = (MyCubeBlockDefinition)slim.BlockDefinition;
+                Include(def);
+                if (def is MyMechanicalConnectionBlockBaseDefinition)
+                    warnSubgrids = true;
                 return false;
             });
         }
@@ -232,6 +236,12 @@ namespace avaness.GridSpawner.Grids
         {
             StringBuilder sb = new StringBuilder();
 
+            if(warnSubgrids)
+            {
+                sb.AppendLine("This list does not include components from any blocks attached via rotor, hinge, piston, or suspension.");
+                sb.AppendLine();
+            }
+
             bool complete;
             foreach(ScreenItem item in CountAllComponents(inventories, out complete))
             {
@@ -243,6 +253,7 @@ namespace avaness.GridSpawner.Grids
                 sb.AppendLine();
                 sb.AppendLine("All components available!");
             }
+
             MyAPIGateway.Utilities.ShowMissionScreen("Projected Grid Components", "", "", sb.ToString(), null, "Close");
         }
 
