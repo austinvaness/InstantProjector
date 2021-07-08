@@ -1,12 +1,10 @@
 ﻿using Sandbox.Common.ObjectBuilders;
 using Sandbox.Definitions;
-using Sandbox.Game;
 using Sandbox.Game.Entities;
 using Sandbox.ModAPI;
 using Sandbox.ModAPI.Interfaces;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using VRage;
 using VRage.Game;
 using VRage.Game.ModAPI;
@@ -209,7 +207,7 @@ namespace avaness.GridSpawner.Grids
                 }
 
                 if(comps != null)
-                    comps.Include(def);
+                    comps.Include(new BlockComponents(cubeBuilder));
 
                 cubeBuilder.Owner = owner.Owner;
                 cubeBuilder.BuiltBy = owner.Owner;

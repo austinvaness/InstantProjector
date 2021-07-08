@@ -4,6 +4,7 @@ using Sandbox.ModAPI;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using VRage;
 using VRage.Game;
@@ -15,6 +16,7 @@ namespace avaness.GridSpawner.Grids
     {
         public int BlockCount { get; private set; } = 0;
 
+        private bool warnSubgrids = false;
         private Dictionary<MyDefinitionId, int> comps = new Dictionary<MyDefinitionId, int>();
 
         public GridComponents()
@@ -27,7 +29,9 @@ namespace avaness.GridSpawner.Grids
             List<IMySlimBlock> temp = new List<IMySlimBlock>(0);
             grid.GetBlocks(temp, (slim) =>
             {
-                Include((MyCubeBlockDefinition)slim.BlockDefinition);
+                Include(new BlockComponents(slim));
+                if (slim.BlockDefinition is MyMechanicalConnectionBlockBaseDefinition)
+                    warnSubgrids = true;
                 return false;
             });
         }
@@ -42,13 +46,19 @@ namespace avaness.GridSpawner.Grids
                 {
                     foreach(MyObjectBuilder_CubeBlock block in grid.CubeBlocks)
                     {
-                        int num;
-                        MyDefinitionId id = block.GetId();
-                        if (ids.TryGetValue(id, out num))
-                            ids[id] = num + 1;
+                        if(BlockComponents.IsComplete(block))
+                        {
+                            int num;
+                            MyDefinitionId id = block.GetId();
+                            if (ids.TryGetValue(id, out num))
+                                ids[id] = num + 1;
+                            else
+                                ids[id] = 1;
+                        }
                         else
-                            ids[id] = 1;
-
+                        {
+                            Include(new BlockComponents(block));
+                        }
                     }
                 }
 
@@ -61,12 +71,12 @@ namespace avaness.GridSpawner.Grids
             }
         }
 
-        public void Include(MyCubeBlockDefinition def)
+        public void Include(BlockComponents components)
         {
-            if (def == null)
+            if (!components.Valid)
                 return;
 
-            foreach(MyCubeBlockDefinition.Component c in def.Components)
+            foreach(MyCubeBlockDefinition.Component c in components.GetComponents())
             {
                 MyDefinitionId id = c.Definition.Id;
                 int num;
@@ -205,7 +215,7 @@ namespace avaness.GridSpawner.Grids
 
             complete = true;
             IPSession ipSession = IPSession.Instance;
-            foreach(KeyValuePair<MyDefinitionId, int> c in comps)
+            foreach(KeyValuePair<MyDefinitionId, int> c in comps.OrderByDescending(x => x.Value))
             {
                 MyDefinitionId id = c.Key;
                 int required = c.Value;
@@ -232,6 +242,12 @@ namespace avaness.GridSpawner.Grids
         {
             StringBuilder sb = new StringBuilder();
 
+            if(warnSubgrids)
+            {
+                sb.AppendLine("This list does not include components from any blocks attached via rotor, hinge, piston, or suspension.");
+                sb.AppendLine();
+            }
+
             bool complete;
             foreach(ScreenItem item in CountAllComponents(inventories, out complete))
             {
@@ -243,6 +259,7 @@ namespace avaness.GridSpawner.Grids
                 sb.AppendLine();
                 sb.AppendLine("All components available!");
             }
+
             MyAPIGateway.Utilities.ShowMissionScreen("Projected Grid Components", "", "", sb.ToString(), null, "Close");
         }
 
