@@ -4,6 +4,7 @@ using Sandbox.ModAPI;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using VRage;
 using VRage.Game;
@@ -214,7 +215,7 @@ namespace avaness.GridSpawner.Grids
 
             complete = true;
             IPSession ipSession = IPSession.Instance;
-            foreach(KeyValuePair<MyDefinitionId, int> c in comps)
+            foreach(KeyValuePair<MyDefinitionId, int> c in comps.OrderByDescending(x => x.Value))
             {
                 MyDefinitionId id = c.Key;
                 int required = c.Value;
