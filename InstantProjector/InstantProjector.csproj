@@ -119,6 +119,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ActivatorInfo.cs" />
+    <Compile Include="Grids\BlockComponents.cs" />
     <Compile Include="Grids\GridPositionInfo.cs" />
     <Compile Include="ShieldApi.cs" />
     <Compile Include="Constants.cs" />
@@ -156,7 +157,9 @@
     <Content Include="Workshop\metadata.mod" />
     <Content Include="Workshop\thumb.jpg" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <Analyzer Include="SEWhitelistChecker.dll" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PostBuildEvent>cd /D $(ProjectDir)

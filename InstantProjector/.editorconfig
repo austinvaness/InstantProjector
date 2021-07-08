@@ -2,3 +2,6 @@
 
 # IDE0001: Simplify Names
 dotnet_diagnostic.IDE0001.severity = suggestion
+
+# ProhibitedMemberRuleM: Prohibited Type Or Member(Mod script)
+dotnet_diagnostic.ProhibitedMemberRuleM.severity = warning

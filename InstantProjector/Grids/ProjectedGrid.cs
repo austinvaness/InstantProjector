@@ -209,7 +209,7 @@ namespace avaness.GridSpawner.Grids
                 }
 
                 if(comps != null)
-                    comps.Include(def);
+                    comps.Include(new BlockComponents(cubeBuilder));
 
                 cubeBuilder.Owner = owner.Owner;
                 cubeBuilder.BuiltBy = owner.Owner;

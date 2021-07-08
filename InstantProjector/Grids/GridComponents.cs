@@ -28,9 +28,8 @@ namespace avaness.GridSpawner.Grids
             List<IMySlimBlock> temp = new List<IMySlimBlock>(0);
             grid.GetBlocks(temp, (slim) =>
             {
-                MyCubeBlockDefinition def = (MyCubeBlockDefinition)slim.BlockDefinition;
-                Include(def);
-                if (def is MyMechanicalConnectionBlockBaseDefinition)
+                Include(new BlockComponents(slim));
+                if (slim.BlockDefinition is MyMechanicalConnectionBlockBaseDefinition)
                     warnSubgrids = true;
                 return false;
             });
@@ -46,13 +45,19 @@ namespace avaness.GridSpawner.Grids
                 {
                     foreach(MyObjectBuilder_CubeBlock block in grid.CubeBlocks)
                     {
-                        int num;
-                        MyDefinitionId id = block.GetId();
-                        if (ids.TryGetValue(id, out num))
-                            ids[id] = num + 1;
+                        if(BlockComponents.IsComplete(block))
+                        {
+                            int num;
+                            MyDefinitionId id = block.GetId();
+                            if (ids.TryGetValue(id, out num))
+                                ids[id] = num + 1;
+                            else
+                                ids[id] = 1;
+                        }
                         else
-                            ids[id] = 1;
-
+                        {
+                            Include(new BlockComponents(block));
+                        }
                     }
                 }
 
@@ -65,12 +70,12 @@ namespace avaness.GridSpawner.Grids
             }
         }
 
-        public void Include(MyCubeBlockDefinition def)
+        public void Include(BlockComponents components)
         {
-            if (def == null)
+            if (!components.Valid)
                 return;
 
-            foreach(MyCubeBlockDefinition.Component c in def.Components)
+            foreach(MyCubeBlockDefinition.Component c in components.GetComponents())
             {
                 MyDefinitionId id = c.Definition.Id;
                 int num;
