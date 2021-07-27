@@ -24,6 +24,7 @@ namespace avaness.GridSpawner
         public const string msgGridLarge = "Projection is too large to be built.";
         public const string msgUnknownBlock = "Projection contains an unknown block.";
         public const string msgCanceled = "Projection spawn was canceled.";
+        public const string msgScale = "Projection scale must be 100% before spawning.";
         public static readonly Random rand = new Random();
         public static readonly Guid Storage = new Guid("9AF39300-CC9E-47C1-A7E1-5DC47DF97A1E");
         public const int checkProjectionRate = 3600; // 60 seconds * 60 ticks

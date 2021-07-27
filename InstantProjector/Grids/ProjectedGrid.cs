@@ -67,6 +67,12 @@ namespace avaness.GridSpawner.Grids
                 return false;
             }
 
+            if (GetScale(p) != 1)
+            {
+                Utilities.Notify(Constants.msgScale, activator);
+                return false;
+            }
+
             // Prepare list of grids
             List<MyObjectBuilder_CubeGrid> grids = pBuilder.ProjectedGrids;
             positionFix?.Apply(grids);
@@ -137,10 +143,6 @@ namespace avaness.GridSpawner.Grids
                 grid.DestructibleBlocks = true;
 
                 MatrixD current = grid.PositionAndOrientation.Value.GetMatrix();
-
-                if (scale != 1)
-                    current.Translation /= scale;
-
                 MatrixD newWorldMatrix = (current * largestMatrixInvert) * targetMatrix;
                 grid.PositionAndOrientation = new MyPositionAndOrientation(ref newWorldMatrix);
                 orientation.Include(newWorldMatrix);
