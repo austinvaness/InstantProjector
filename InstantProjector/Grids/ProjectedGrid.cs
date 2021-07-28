@@ -101,19 +101,7 @@ namespace avaness.GridSpawner.Grids
             if (!MyAPIGateway.Session.CreativeMode)
                 comps = new GridComponents();
 
-            MyIDModule owner = ((MyCubeBlock)p).IDModule;
-            if (activator != 0)
-            {
-                long temp = MyAPIGateway.Players.TryGetIdentityId(activator);
-                if(temp != 0)
-                {
-                    if (owner.ShareMode == MyOwnershipShareModeEnum.All)
-                        owner = new MyIDModule(temp, MyOwnershipShareModeEnum.Faction);
-                    else
-                        owner = new MyIDModule(temp, owner.ShareMode);
-                }
-            }
-
+            MyIDModule owner = GetProjectionOwner(p, activator);
             GridOrientation orientation = new GridOrientation(p);
             int totalBlocks = 0;
             Random rand = new Random();
@@ -180,6 +168,23 @@ namespace avaness.GridSpawner.Grids
 
             projectedGrid = new ProjectedGrid(activator, p, grids, bounds, comps, orientation, shiftBuildArea, totalBlocks, ownerInfo);
             return true;
+        }
+
+        private static MyIDModule GetProjectionOwner(IMyProjector p, ulong activator)
+        {
+            MyIDModule owner = ((MyCubeBlock)p).IDModule;
+            if (activator != 0)
+            {
+                long temp = MyAPIGateway.Players.TryGetIdentityId(activator);
+                if (temp != 0)
+                {
+                    if (owner.ShareMode == MyOwnershipShareModeEnum.All)
+                        owner = new MyIDModule(temp, MyOwnershipShareModeEnum.Faction);
+                    else
+                        owner = new MyIDModule(temp, owner.ShareMode);
+                }
+            }
+            return owner;
         }
 
         private static void PrepBlocks(Random rand, MyIDModule owner, MyObjectBuilder_CubeGrid grid, GridComponents comps, MechanicalSystem subgrids)
