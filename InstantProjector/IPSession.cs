@@ -11,6 +11,7 @@ using VRage.Game;
 using VRage.Game.Components;
 using VRage.ObjectBuilders;
 using VRage.Utils;
+using VRageMath;
 
 namespace avaness.GridSpawner
 {
@@ -24,6 +25,8 @@ namespace avaness.GridSpawner
         public Dictionary<long, Syncable> Syncable = new Dictionary<long, Syncable>();
         internal ShieldApi Shields { get; } = new ShieldApi();
 
+
+        public List<MatrixD> matrix = new List<MatrixD>();
         public MapSettings MapSettings { get; } = new MapSettings();
 
         private bool init = false;
@@ -186,6 +189,9 @@ namespace avaness.GridSpawner
                     return;
                 Start();
             }
+
+            foreach (Matrix m in matrix)
+                Utilities.DrawMatrix(m);
         }
 
         private void RemoveVanillaSpawnAction(IMyTerminalBlock block, List<IMyTerminalAction> actions)

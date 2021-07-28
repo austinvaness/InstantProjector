@@ -121,6 +121,11 @@
     <Compile Include="ActivatorInfo.cs" />
     <Compile Include="Grids\BlockComponents.cs" />
     <Compile Include="Grids\GridPositionInfo.cs" />
+    <Compile Include="Grids\Subgrids\MechanicalBaseBlock.cs" />
+    <Compile Include="Grids\Subgrids\MechanicalConnectionType.cs" />
+    <Compile Include="Grids\Subgrids\GridMechanicalSystem.cs" />
+    <Compile Include="Grids\Subgrids\MechanicalSystem.cs" />
+    <Compile Include="Grids\Subgrids\MechanicalTopBlock.cs" />
     <Compile Include="ShieldApi.cs" />
     <Compile Include="Constants.cs" />
     <Compile Include="Grids\GridComponents.cs" />

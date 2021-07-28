@@ -1,4 +1,5 @@
-﻿using Sandbox.Common.ObjectBuilders;
+﻿using avaness.GridSpawner.Grids.Subgrids;
+using Sandbox.Common.ObjectBuilders;
 using Sandbox.Definitions;
 using Sandbox.Game.Entities;
 using Sandbox.ModAPI;
@@ -78,7 +79,12 @@ namespace avaness.GridSpawner.Grids
             positionFix?.Apply(grids);
 
             MyObjectBuilder_CubeGrid mainGrid = grids[0];
-            if (!Utilities.SupportsSubgrids(p) && grids.Count > 1)
+            MechanicalSystem subgrids = null;
+            if (Utilities.SupportsSubgrids(p))
+            {
+                subgrids = new MechanicalSystem();
+            }
+            else if (grids.Count > 1)
             {
                 var largest = grids.MaxBy(x => x.CubeBlocks.Count);
                 grids.Clear();
@@ -90,13 +96,10 @@ namespace avaness.GridSpawner.Grids
 
             float scale = GetScale(p);
 
-            GridOrientation orientation = new GridOrientation(p);
 
             GridComponents comps = null;
             if (!MyAPIGateway.Session.CreativeMode)
                 comps = new GridComponents();
-
-            int totalBlocks = 0;
 
             MyIDModule owner = ((MyCubeBlock)p).IDModule;
             if (activator != 0)
@@ -111,6 +114,8 @@ namespace avaness.GridSpawner.Grids
                 }
             }
 
+            GridOrientation orientation = new GridOrientation(p);
+            int totalBlocks = 0;
             Random rand = new Random();
             foreach (MyObjectBuilder_CubeGrid grid in grids)
             {
@@ -121,7 +126,7 @@ namespace avaness.GridSpawner.Grids
                     return false;
                 }
 
-                PrepBlocks(rand, owner, grid, comps);
+                PrepBlocks(rand, owner, grid, comps, subgrids);
                 if(grid.CubeBlocks.Count == 0)
                 {
                     Utilities.Notify(Constants.msgGridSmall, activator);
@@ -177,8 +182,12 @@ namespace avaness.GridSpawner.Grids
             return true;
         }
 
-        private static void PrepBlocks(Random rand, MyIDModule owner, MyObjectBuilder_CubeGrid grid, GridComponents comps)
+        private static void PrepBlocks(Random rand, MyIDModule owner, MyObjectBuilder_CubeGrid grid, GridComponents comps, MechanicalSystem subgrids)
         {
+            GridMechanicalSystem gridSystem = null;
+            if (subgrids != null)
+                gridSystem = new GridMechanicalSystem(grid);
+
             for (int i = grid.CubeBlocks.Count - 1; i >= 0; i--)
             {
                 MyObjectBuilder_CubeBlock cubeBuilder = grid.CubeBlocks[i];
@@ -202,28 +211,66 @@ namespace avaness.GridSpawner.Grids
                 if(comps != null)
                     comps.Include(new BlockComponents(cubeBuilder));
 
+                AddToSystem(gridSystem, cubeBuilder, grid, def);
+
                 cubeBuilder.Owner = owner.Owner;
                 cubeBuilder.BuiltBy = owner.Owner;
                 cubeBuilder.ShareMode = owner.ShareMode;
 
-                // Since the cross grid entity ids are invalid, remove references to them.
-                if (cubeBuilder is MyObjectBuilder_AttachableTopBlockBase)
-                    ((MyObjectBuilder_AttachableTopBlockBase)cubeBuilder).ParentEntityId = 0;
-                if (cubeBuilder is MyObjectBuilder_MechanicalConnectionBlock)
-                    ((MyObjectBuilder_MechanicalConnectionBlock)cubeBuilder).TopBlockId = null;
-                if(cubeBuilder is MyObjectBuilder_MotorBase)
-                    ((MyObjectBuilder_MotorBase)cubeBuilder).RotorEntityId = null;
+                var functional = cubeBuilder as MyObjectBuilder_FunctionalBlock;
+                if (functional != null)
+                    functional.Enabled = true;
 
-
-                if (cubeBuilder is MyObjectBuilder_FunctionalBlock)
-                    ((MyObjectBuilder_FunctionalBlock)cubeBuilder).Enabled = true;
-                if (cubeBuilder is MyObjectBuilder_BatteryBlock)
+                var battery = cubeBuilder as MyObjectBuilder_BatteryBlock;
+                if (battery != null)
                 {
                     MyBatteryBlockDefinition batDef = (MyBatteryBlockDefinition)def;
-                    ((MyObjectBuilder_BatteryBlock)cubeBuilder).CurrentStoredPower = batDef.InitialStoredPowerRatio * batDef.MaxStoredPower;
+                    battery.CurrentStoredPower = batDef.InitialStoredPowerRatio * batDef.MaxStoredPower;
                 }
             }
 
+            subgrids?.Add(gridSystem);
+        }
+
+        private static void AddToSystem(GridMechanicalSystem system, MyObjectBuilder_CubeBlock block, MyObjectBuilder_CubeGrid grid, MyCubeBlockDefinition def)
+        {
+            if (block is MyObjectBuilder_Wheel)
+            {
+                if (system != null)
+                    system.Add(new MechanicalTopBlock(block, grid, def));
+            }
+            else
+            {
+                var topBlock = block as MyObjectBuilder_AttachableTopBlockBase;
+                if (topBlock != null)
+                {
+                    if (topBlock.ParentEntityId != 0)
+                    {
+                        if (system == null)
+                            topBlock.ParentEntityId = 0;
+                        else
+                            system.Add(new MechanicalTopBlock(block, grid, def));
+                    }
+                }
+                else
+                {
+                    var baseBlock = block as MyObjectBuilder_MechanicalConnectionBlock;
+                    if (baseBlock != null && baseBlock.TopBlockId.HasValue)
+                    {
+                        if (system == null || baseBlock.TopBlockId.Value == 0)
+                        {
+                            baseBlock.TopBlockId = null;
+                            var motor = baseBlock as MyObjectBuilder_MotorBase;
+                            if (motor != null)
+                                motor.RotorEntityId = null;
+                        }
+                        else
+                        {
+                            system.Add(new MechanicalBaseBlock(baseBlock, grid, (MyMechanicalConnectionBlockBaseDefinition)def));
+                        }
+                    }
+                }
+            }
         }
 
         private static float GetScale(IMyProjector p)
@@ -303,17 +350,6 @@ namespace avaness.GridSpawner.Grids
                     Utilities.Notify(Utilities.GetOverlapString(true, e), Activator);
                     ParallelSpawner.Close(grids);
                     return;
-                }
-
-                if(grids.Count > 1)
-                {
-                    var cubes = ((MyCubeGrid)grid).GetFatBlocks();
-                    foreach (MyCubeBlock cube in cubes)
-                    {
-                        IMyMechanicalConnectionBlock baseBlock = cube as IMyMechanicalConnectionBlock;
-                        if(baseBlock != null)
-                            baseBlock.Attach();
-                    }
                 }
             }
 
