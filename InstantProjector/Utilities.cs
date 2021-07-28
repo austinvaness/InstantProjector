@@ -1,4 +1,5 @@
-﻿using Sandbox.Game;
+﻿using Sandbox.Definitions;
+using Sandbox.Game;
 using Sandbox.Game.Entities;
 using Sandbox.ModAPI;
 using System;
@@ -7,7 +8,9 @@ using System.Text;
 using VRage.Game;
 using VRage.Game.ModAPI;
 using VRage.ModAPI;
+using VRage.Utils;
 using VRageMath;
+using BlendTypeEnum = VRageRender.MyBillboard.BlendTypeEnum;
 
 namespace avaness.GridSpawner
 {
@@ -187,5 +190,69 @@ namespace avaness.GridSpawner
         {
             return referenceInverted * world;
         }*/
+
+        public static void GetBlockPosition(MyObjectBuilder_CubeBlock cube, MyObjectBuilder_CubeGrid grid, MyCubeBlockDefinition def, out MatrixD matrix, out Vector3D size)
+        {
+            float gridSize = GetGridSize(grid.GridSizeEnum);
+            size = def.Size * gridSize;
+            Vector3 blockSize = Vector3.Abs(Vector3.TransformNormal(size, cube.BlockOrientation));
+            Vector3 localPosition = ((Vector3I)cube.Min * gridSize) - new Vector3(gridSize / 2f);
+
+            Matrix localMatrix;
+            ((MyBlockOrientation)cube.BlockOrientation).GetMatrix(out localMatrix);
+            localMatrix.Translation = localPosition + (blockSize * 0.5f);
+
+            MatrixD gridMatrix = grid.PositionAndOrientation.Value.GetMatrix();
+            
+            matrix = LocalToWorld(localMatrix, gridMatrix);
+        }
+
+        public static float GetGridSize(MyCubeSize size)
+        {
+            return size == MyCubeSize.Large ? 2.5f : 0.5f;
+        }
+
+
+        /// <summary>
+        /// Projects a value onto another vector.
+        /// </summary>
+        /// <param name="guide">Must be of length 1.</param>
+        public static double ScalerProjection(Vector3D value, Vector3D guide)
+        {
+            double returnValue = Vector3D.Dot(value, guide);
+            if (double.IsNaN(returnValue))
+                return 0;
+            return returnValue;
+        }
+
+        /// <summary>
+        /// Projects a value onto another vector.
+        /// </summary>
+        /// <param name="guide">Must be of length 1.</param>
+        public static Vector3D VectorProjection(Vector3D value, Vector3D guide)
+        {
+            return ScalerProjection(value, guide) * guide;
+        }
+
+        /// <summary>
+        /// Projects a value onto another vector.
+        /// </summary>
+        /// <param name="guide">Must be of length 1.</param>
+        public static Vector3D VectorRejection(Vector3D value, Vector3D guide)
+        {
+            return value - VectorProjection(value, guide);
+        }
+        public static void DrawMatrix(MatrixD m)
+        {
+            DrawVector(m.Translation, m.Forward, Color.Red);
+            DrawVector(m.Translation, m.Up, Color.Green);
+            DrawVector(m.Translation, m.Left, Color.Blue);
+        }
+
+        public static void DrawVector(Vector3D start, Vector3D v, Color c)
+        {
+            Vector4 color = c.ToVector4();
+            MyTransparentGeometry.AddLineBillboard(MyStringId.GetOrCompute("Square"), color, start, v, 0.5f, 0.01f, BlendTypeEnum.PostPP);
+        }
     }
 }

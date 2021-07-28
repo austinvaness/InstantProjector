@@ -76,25 +76,16 @@ namespace avaness.GridSpawner.Grids
             // Prepare list of grids
             List<MyObjectBuilder_CubeGrid> grids = pBuilder.ProjectedGrids;
             positionFix?.Apply(grids);
-            int largestIndex = FindLargest(grids);
 
-            MyObjectBuilder_CubeGrid largestGrid = grids[largestIndex];
-            if (Utilities.SupportsSubgrids(p))
+            MyObjectBuilder_CubeGrid mainGrid = grids[0];
+            if (!Utilities.SupportsSubgrids(p) && grids.Count > 1)
             {
-                if(largestIndex != 0)
-                {
-                    MyObjectBuilder_CubeGrid temp = grids[0];
-                    grids[0] = largestGrid;
-                    grids[largestIndex] = temp;
-                }
-            }
-            else
-            {
+                var largest = grids.MaxBy(x => x.CubeBlocks.Count);
                 grids.Clear();
-                grids.Add(largestGrid);
+                grids.Add(largest);
             }
 
-            MatrixD largestMatrixInvert = MatrixD.Invert(largestGrid.PositionAndOrientation.Value.GetMatrix());
+            MatrixD refMatrixInvert = MatrixD.Invert(mainGrid.PositionAndOrientation.Value.GetMatrix());
             MatrixD targetMatrix = p.ProjectedGrid.WorldMatrix;
 
             float scale = GetScale(p);
@@ -143,7 +134,7 @@ namespace avaness.GridSpawner.Grids
                 grid.DestructibleBlocks = true;
 
                 MatrixD current = grid.PositionAndOrientation.Value.GetMatrix();
-                MatrixD newWorldMatrix = (current * largestMatrixInvert) * targetMatrix;
+                MatrixD newWorldMatrix = Utilities.LocalToWorld(Utilities.WorldToLocalNI(current, refMatrixInvert), targetMatrix);
                 grid.PositionAndOrientation = new MyPositionAndOrientation(ref newWorldMatrix);
                 orientation.Include(newWorldMatrix);
             }
@@ -233,22 +224,6 @@ namespace avaness.GridSpawner.Grids
                 }
             }
 
-        }
-
-        private static int FindLargest(List<MyObjectBuilder_CubeGrid> grids)
-        {
-            int maxBlockCount = int.MinValue;
-            int largest = -1;
-            for(int i = 0; i < grids.Count; i++)
-            {
-                MyObjectBuilder_CubeGrid grid = grids[i];
-                if (grid.CubeBlocks.Count > maxBlockCount)
-                {
-                    maxBlockCount = grid.CubeBlocks.Count;
-                    largest = i;
-                }
-            }
-            return largest;
         }
 
         private static float GetScale(IMyProjector p)
