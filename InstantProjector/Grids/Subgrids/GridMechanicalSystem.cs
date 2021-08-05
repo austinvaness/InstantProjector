@@ -1,4 +1,5 @@
 ﻿using Sandbox.Game;
+using Sandbox.ModAPI;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -21,7 +22,7 @@ namespace avaness.GridSpawner.Grids.Subgrids
             this.grid = grid;
         }
 
-        public void AttachBlocks(GridMechanicalSystem other)
+        public void SearchBlocks(GridMechanicalSystem other)
         {
             // Search the other grid for top blocks
 
@@ -39,8 +40,14 @@ namespace avaness.GridSpawner.Grids.Subgrids
                 if (!groups.TryGetValue(otherGroup.Key, out myGroup))
                     continue;
 
-                myGroup.AttachBlocks(otherGroup.Value);
+                myGroup.SearchBlocks(otherGroup.Value);
             }
+        }
+
+        public void AttachBlocks()
+        {
+            foreach (MechanicalGroup group in groups.Values)
+                group.AttachBlocks();
         }
 
         public void Clean()
@@ -88,48 +95,34 @@ namespace avaness.GridSpawner.Grids.Subgrids
             public List<MechanicalTopBlock> TopBlocks { get; } = new List<MechanicalTopBlock>();
             public List<MechanicalBaseBlock> BaseBlocks { get; } = new List<MechanicalBaseBlock>();
 
-            public void AttachBlocks(MechanicalGroup other)
+            public void SearchBlocks(MechanicalGroup other)
             {
                 // Search the other group for top blocks
 
                 if (other.TopBlocks.Count == 0 || BaseBlocks.Count == 0)
                     return;
 
-                for (int baseIndex = BaseBlocks.Count - 1; baseIndex >= 0; baseIndex--)
+                foreach (MechanicalBaseBlock baseBlock in BaseBlocks)
                 {
-                    double min = double.PositiveInfinity;
-                    int minIndex = -1;
-                    MechanicalBaseBlock baseBlock = BaseBlocks[baseIndex];
-                    for (int topIndex = 0; topIndex < other.TopBlocks.Count; topIndex++)
-                    {
-                        MechanicalTopBlock topBlock = other.TopBlocks[topIndex];
-                        double dist;
-                        if (baseBlock.TryGetAlignment(topBlock, out dist) && dist < min)
-                        {
-                            min = dist;
-                            minIndex = topIndex;
-                            break;
-                        }
-                    }
-                    
-                    if(minIndex >= 0)
-                    {
-                        MechanicalTopBlock minTop = other.TopBlocks[minIndex];
-                        baseBlock.SetTopBlock(minTop.EntityId);
-                        minTop.SetBaseBlock(baseBlock.EntityId);
-                        BaseBlocks.RemoveAtFast(baseIndex);
-                        other.TopBlocks.RemoveAtFast(minIndex);
-                    }
+                    foreach (MechanicalTopBlock topBlock in other.TopBlocks)
+                        baseBlock.TestAlignment(topBlock);
                 }
+            }
+
+            public void AttachBlocks()
+            {
+                foreach (MechanicalBaseBlock baseBlock in BaseBlocks)
+                    baseBlock.Attach();
             }
 
             public void Clean()
             {
+                // Top blocks that were not attached to a base block will still have an invalid entityid reference
                 foreach (MechanicalTopBlock topBlock in TopBlocks)
-                    topBlock.SetBaseBlock(0);
-                foreach (MechanicalBaseBlock baseBlock in BaseBlocks)
-                    baseBlock.SetTopBlock(0);
-
+                {
+                    if (!topBlock.Attached)
+                        topBlock.SetBaseBlock(0);
+                }
             }
         }
     }

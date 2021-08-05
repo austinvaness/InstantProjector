@@ -2,6 +2,6 @@
 {
     public enum MechanicalConnectionType
     {
-        Unknown, Rotor, AdvancedRotor, Hinge, Piston, Wheel
+        Unknown, Rotor, Hinge, Piston, Wheel, Connector
     }
 }

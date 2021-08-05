@@ -252,7 +252,7 @@ namespace avaness.GridSpawner
         public static void DrawVector(Vector3D start, Vector3D v, Color c)
         {
             Vector4 color = c.ToVector4();
-            MyTransparentGeometry.AddLineBillboard(MyStringId.GetOrCompute("Square"), color, start, v, 0.5f, 0.01f, BlendTypeEnum.PostPP);
+            MyTransparentGeometry.AddLineBillboard(MyStringId.GetOrCompute("Square"), color, start, v, (float)v.Length(), 0.01f, BlendTypeEnum.PostPP);
         }
     }
 }

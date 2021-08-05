@@ -9,7 +9,8 @@ namespace avaness.GridSpawner.Grids.Subgrids
 
         public void Add(GridMechanicalSystem grid)
         {
-            grids.Add(grid);
+            if(grid != null)
+                grids.Add(grid);
         }
 
         public void Attach()
@@ -19,13 +20,13 @@ namespace avaness.GridSpawner.Grids.Subgrids
                 foreach (GridMechanicalSystem grid2 in grids)
                 {
                     if(!ReferenceEquals(grid, grid2))
-                        grid.AttachBlocks(grid2);
+                        grid.SearchBlocks(grid2);
                 }
             }
-        }
 
-        public void Clean()
-        {
+            foreach (GridMechanicalSystem grid in grids)
+                grid.AttachBlocks();
+
             foreach (GridMechanicalSystem grid in grids)
                 grid.Clean();
         }

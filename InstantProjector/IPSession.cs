@@ -26,7 +26,6 @@ namespace avaness.GridSpawner
         internal ShieldApi Shields { get; } = new ShieldApi();
 
 
-        public List<MatrixD> matrix = new List<MatrixD>();
         public MapSettings MapSettings { get; } = new MapSettings();
 
         private bool init = false;
@@ -189,9 +188,6 @@ namespace avaness.GridSpawner
                     return;
                 Start();
             }
-
-            foreach (Matrix m in matrix)
-                Utilities.DrawMatrix(m);
         }
 
         private void RemoveVanillaSpawnAction(IMyTerminalBlock block, List<IMyTerminalAction> actions)

@@ -96,7 +96,6 @@ namespace avaness.GridSpawner.Grids
 
             float scale = GetScale(p);
 
-
             GridComponents comps = null;
             if (!MyAPIGateway.Session.CreativeMode)
                 comps = new GridComponents();
@@ -114,7 +113,6 @@ namespace avaness.GridSpawner.Grids
                     return false;
                 }
 
-                PrepBlocks(rand, owner, grid, comps, subgrids);
                 if(grid.CubeBlocks.Count == 0)
                 {
                     Utilities.Notify(Constants.msgGridSmall, activator);
@@ -130,6 +128,9 @@ namespace avaness.GridSpawner.Grids
                 MatrixD newWorldMatrix = Utilities.LocalToWorld(Utilities.WorldToLocalNI(current, refMatrixInvert), targetMatrix);
                 grid.PositionAndOrientation = new MyPositionAndOrientation(ref newWorldMatrix);
                 orientation.Include(newWorldMatrix);
+
+
+                PrepBlocks(rand, owner, grid, comps, subgrids);
             }
 
             if (totalBlocks < IPSession.Instance.MapSettings.MinBlocks)
@@ -155,6 +156,7 @@ namespace avaness.GridSpawner.Grids
                 }
             }
 
+            subgrids?.Attach();
 
             GridBounds bounds = new GridBounds(p, grids);
             ActivatorInfo ownerInfo = new ActivatorInfo(owner.Owner);
@@ -239,22 +241,36 @@ namespace avaness.GridSpawner.Grids
 
         private static void AddToSystem(GridMechanicalSystem system, MyObjectBuilder_CubeBlock block, MyObjectBuilder_CubeGrid grid, MyCubeBlockDefinition def)
         {
-            if (block is MyObjectBuilder_Wheel)
+            var connector = block as MyObjectBuilder_ShipConnector;
+            if (connector != null)
             {
-                if (system != null)
-                    system.Add(new MechanicalTopBlock(block, grid, def));
+                if (connector.ConnectedEntityId == 0)
+                    return;
+
+                if (system == null)
+                    connector.ConnectedEntityId = 0;
+                else if(connector.IsMaster.HasValue && connector.IsMaster.Value)
+                    system.Add(new MechanicalBaseBlock(connector, grid, def, MechanicalConnectionType.Connector));
+                else
+                    system.Add(new MechanicalTopBlock(connector, grid, def, MechanicalConnectionType.Connector));
+            }
+            else if (block is MyObjectBuilder_Wheel)
+            {
+                if (system != null && block.SubtypeName.Contains("RealWheel"))
+                    system.Add(new MechanicalTopBlock(block, grid, def, MechanicalConnectionType.Wheel));
             }
             else
             {
+                MechanicalConnectionType temp;
                 var topBlock = block as MyObjectBuilder_AttachableTopBlockBase;
                 if (topBlock != null)
                 {
                     if (topBlock.ParentEntityId != 0)
                     {
-                        if (system == null)
-                            topBlock.ParentEntityId = 0;
+                        if(system != null && MechanicalTopBlock.TryGetConnectionType(topBlock, out temp))
+                            system.Add(new MechanicalTopBlock(block, grid, def, temp));
                         else
-                            system.Add(new MechanicalTopBlock(block, grid, def));
+                            topBlock.ParentEntityId = 0;
                     }
                 }
                 else
@@ -262,16 +278,16 @@ namespace avaness.GridSpawner.Grids
                     var baseBlock = block as MyObjectBuilder_MechanicalConnectionBlock;
                     if (baseBlock != null && baseBlock.TopBlockId.HasValue)
                     {
-                        if (system == null || baseBlock.TopBlockId.Value == 0)
+                        if (system != null && baseBlock.TopBlockId.Value != 0 && MechanicalBaseBlock.TryGetConnectionType(baseBlock, out temp))
+                        {
+                            system.Add(new MechanicalBaseBlock(baseBlock, grid, def, temp));
+                        }
+                        else
                         {
                             baseBlock.TopBlockId = null;
                             var motor = baseBlock as MyObjectBuilder_MotorBase;
                             if (motor != null)
                                 motor.RotorEntityId = null;
-                        }
-                        else
-                        {
-                            system.Add(new MechanicalBaseBlock(baseBlock, grid, (MyMechanicalConnectionBlockBaseDefinition)def));
                         }
                     }
                 }
