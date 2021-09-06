@@ -10,6 +10,7 @@ using VRage;
 using VRage.Game;
 using VRage.Game.ModAPI;
 using VRage.ModAPI;
+using VRage.Utils;
 using VRageMath;
 
 namespace avaness.GridSpawner.Grids
@@ -256,7 +257,8 @@ namespace avaness.GridSpawner.Grids
             }
             else if (block is MyObjectBuilder_Wheel)
             {
-                if (system != null && block.SubtypeName.Contains("RealWheel"))
+                // There is no ideal way to determine real wheel vs wheel block
+                if (system != null && (block.SubtypeName.Contains("RealWheel") || (def.Context != null && !def.Context.IsBaseGame)))
                     system.Add(new MechanicalTopBlock(block, grid, def, MechanicalConnectionType.Wheel));
             }
             else
