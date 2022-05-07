@@ -333,7 +333,7 @@ namespace avaness.GridSpawner
             if (Utilities.SupportsSubgrids(p))
             {
                 MyObjectBuilder_Projector pBuilder = (MyObjectBuilder_Projector)p.GetObjectBuilderCubeBlock(true);
-                if (pBuilder != null && pBuilder.ProjectedGrids.Count > 1)
+                if (pBuilder?.ProjectedGrids != null && pBuilder.ProjectedGrids.Count > 1)
                     grids = pBuilder.ProjectedGrids;
             }
 
