@@ -1,4 +1,5 @@
-﻿using Sandbox.ModAPI;
+﻿using Sandbox.Game.Entities;
+using Sandbox.ModAPI;
 using System;
 using System.Collections.Generic;
 using VRage.Game;
@@ -43,12 +44,15 @@ namespace avaness.GridSpawner.Grids
             onSuccess.Invoke(spawned);
         }
 
-        public static void Add(IEnumerable<IMyCubeGrid> grids)
+        public static bool Add(IEnumerable<IMyCubeGrid> grids)
         {
             foreach (IMyCubeGrid grid in grids)
             {
                 MyAPIGateway.Entities.AddEntity(grid);
+                if (!grid.InScene || !MyAPIGateway.Entities.Exist(grid))
+                    return false;
             }
+            return true;
         }
 
         public static void Close(IEnumerable<IMyCubeGrid> grids)

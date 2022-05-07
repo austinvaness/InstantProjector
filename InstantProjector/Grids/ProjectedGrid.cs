@@ -377,9 +377,18 @@ namespace avaness.GridSpawner.Grids
             }
 
             if (MyAPIGateway.Session.CreativeMode || comps.ConsumeComponents(Activator, Utilities.GetInventories(p)))
-                ParallelSpawner.Add(grids);
+            {
+                if (!ParallelSpawner.Add(grids))
+                {
+                    string text = "A critical error occurred while spawning the grid! Please report this issue to the mod developers.";
+                    MyLog.Default.WriteLineAndConsole("[Instant Projector] ERROR: " + text);
+                    Utilities.Notify(text, Activator);
+                }
+            }
             else
+            {
                 ParallelSpawner.Close(grids);
+            }
         }
 
         private Vector3D AccelerateTime(IMyEntity e, Vector3D velocity)
