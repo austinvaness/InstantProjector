@@ -159,6 +159,8 @@ namespace avaness.GridSpawner.Grids
 
             subgrids?.Attach();
 
+            MyAPIGateway.Entities.RemapObjectBuilderCollection(grids);
+
             GridBounds bounds = new GridBounds(p, grids);
             ActivatorInfo ownerInfo = new ActivatorInfo(owner.Owner);
             ownerInfo.Whitelist(p.CubeGrid); // In cases where the projector is a shared projector station, it needs to be whitelisted.
