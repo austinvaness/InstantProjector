@@ -78,7 +78,12 @@ namespace avaness.GridSpawner
 
         public static bool SupportsSubgrids(IMyProjector p)
         {
-            return IPSession.Instance.MapSettings.Subgrids && p.BlockDefinition.SubtypeId == "LargeBlockConsole";
+            if (!IPSession.Instance.MapSettings.Subgrids)
+                return false;
+            var mgp = IPSession.Instance.MGP;
+            if (mgp != null && mgp.Available)
+                return true;
+            return p.BlockDefinition.SubtypeId == "LargeBlockConsole";
         }
 
         public static string GetOverlapString(bool error, IMyEntity e)

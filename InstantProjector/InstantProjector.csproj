@@ -126,6 +126,10 @@
     <Compile Include="Grids\Subgrids\GridMechanicalSystem.cs" />
     <Compile Include="Grids\Subgrids\MechanicalSystem.cs" />
     <Compile Include="Grids\Subgrids\MechanicalTopBlock.cs" />
+    <Compile Include="MultigridProjector\Api\BlockLocation.cs" />
+    <Compile Include="MultigridProjector\Api\BlockState.cs" />
+    <Compile Include="MultigridProjector\Api\IMultigridProjectorApi.cs" />
+    <Compile Include="MultigridProjector\Api\MultigridProjectorModAgent.cs" />
     <Compile Include="ShieldApi.cs" />
     <Compile Include="Constants.cs" />
     <Compile Include="Grids\GridComponents.cs" />
