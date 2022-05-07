@@ -16,15 +16,15 @@ namespace avaness.GridSpawner.Settings
 
         public SettingsChat()
         {
-            MyAPIGateway.Utilities.MessageEntered += ChatMessage;
+            MyAPIGateway.Utilities.MessageEnteredSender += ChatMessage;
         }
 
         public void Unload()
         {
-            MyAPIGateway.Utilities.MessageEntered -= ChatMessage;
+            MyAPIGateway.Utilities.MessageEnteredSender -= ChatMessage;
         }
 
-        private void ChatMessage(string messageText, ref bool sendToOthers)
+        private void ChatMessage(ulong sender, string messageText, ref bool sendToOthers)
         {
             string[] args;
             if (messageText.StartsWith(prefix2) || messageText.StartsWith(prefix1))
@@ -344,7 +344,7 @@ namespace avaness.GridSpawner.Settings
 
         private void Show(string s)
         {
-            MyVisualScriptLogicProvider.SendChatMessage(s, "InstantProjector", p.IdentityId, "Red");
+            MyAPIGateway.Utilities.ShowMessage("InstantProjector", s);
         }
 
         private bool IsPlayerAdmin(bool warn)
@@ -353,7 +353,7 @@ namespace avaness.GridSpawner.Settings
                 return true;
             bool result = p.PromoteLevel == MyPromoteLevel.Owner || p.PromoteLevel == MyPromoteLevel.Admin;
             if (!result && warn)
-                MyVisualScriptLogicProvider.SendChatMessage("You do not have permission to do that.");
+                Show("You do not have permission to do that.");
             return result;
         }
     }
