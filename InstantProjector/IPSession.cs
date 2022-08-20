@@ -1,7 +1,6 @@
 ﻿using avaness.GridSpawner.Networking;
 using avaness.GridSpawner.Settings;
 using DefenseShields;
-using MultigridProjector.Api;
 using Sandbox.Definitions;
 using Sandbox.ModAPI;
 using Sandbox.ModAPI.Interfaces.Terminal;
@@ -25,7 +24,6 @@ namespace avaness.GridSpawner
         public Network Net { get; private set; }
         public Dictionary<long, Syncable> Syncable = new Dictionary<long, Syncable>();
         internal ShieldApi Shields { get; } = new ShieldApi();
-        public MultigridProjectorModAgent MGP { get; private set; }
 
 
         public MapSettings MapSettings { get; } = new MapSettings();
@@ -122,7 +120,6 @@ namespace avaness.GridSpawner
         {
             Instance = this;
             Shields.Load();
-            MGP = new MultigridProjectorModAgent();
             Net = new Network();
             if (Constants.IsServer)
             {
