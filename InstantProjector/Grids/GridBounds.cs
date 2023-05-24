@@ -8,6 +8,7 @@ using VRage.Game;
 using VRage.Game.Entity;
 using VRage.Game.ModAPI;
 using VRage.ModAPI;
+using VRage.Utils;
 using VRageMath;
 
 namespace avaness.GridSpawner.Grids
@@ -303,12 +304,12 @@ namespace avaness.GridSpawner.Grids
 
         public bool HasClearArea()
         {
-            return MyAPIGateway.Entities.FindFreePlace(worldVolume.Center, (float)worldVolume.Radius).HasValue;
+            return FindFreePlace(worldVolume.Center, (float)worldVolume.Radius).HasValue;
         }
 
         public bool TryFindClearArea(GridOrientation orientation)
         {
-            Vector3D? result = MyAPIGateway.Entities.FindFreePlace(worldVolume.Center, (float)worldVolume.Radius);
+            Vector3D? result = FindFreePlace(worldVolume.Center, (float)worldVolume.Radius);
             if (!result.HasValue || Vector3D.DistanceSquared(worldVolume.Center, result.Value) > Constants.maxNewDist2)
                 return false;
 
@@ -316,6 +317,19 @@ namespace avaness.GridSpawner.Grids
             Vector3D newPosRel = Vector3D.TransformNormal(result.Value - mRef.Translation, MatrixD.Transpose(mRef));
             orientation.Translate(newPosRel - relativeCenter);
             return true;
+        }
+
+        Vector3D? FindFreePlace(Vector3D basePos, float radius, int maxTestCount = 20, int testsPerDistance = 5, float stepSize = 1)
+        {
+            try
+            {
+                return MyAPIGateway.Entities.FindFreePlace(basePos, radius, maxTestCount, testsPerDistance, stepSize);
+            }
+            catch (Exception e)
+            {
+                MyLog.Default.WriteLineAndConsole("[Instant Projector] Unable to find a free place due to a Keen error: " + e);
+                return null;
+            }
         }
     }
 }
