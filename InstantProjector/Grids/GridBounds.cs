@@ -226,9 +226,12 @@ namespace avaness.GridSpawner.Grids
             }
 
             // 512 = VRage.Game.ObjectBuilders.Components.MySafeZoneAction.BuildingProjections
-            if (original == null)
-                return safezone.IsActionAllowed(obb.GetAABB(), CastProhibit(safezone.AllowedActions, 512));
-            return safezone.IsActionAllowed((MyEntity)original, CastProhibit(safezone.AllowedActions, 512));
+            int buildingProjections = 0x200;
+            if (((int)safezone.AllowedActions & buildingProjections) != buildingProjections)
+                return false;
+            if (original != null)
+                return safezone.IsActionAllowed((MyEntity)original, CastProhibit(safezone.AllowedActions, buildingProjections));
+            return true;
         }
 
         // Hack for MySafeZoneAction because it is not whitelisted
