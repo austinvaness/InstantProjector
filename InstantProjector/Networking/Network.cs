@@ -61,7 +61,7 @@ namespace avaness.GridSpawner.Networking
             data = PacketData.ToBinary(data, typeId);
 
             ulong me = 0;
-            if (MyAPIGateway.Session.Player != null)
+            if (MyAPIGateway.Session?.Player != null)
                 me = MyAPIGateway.Session.Player.SteamUserId;
             List<IMyPlayer> temp = new List<IMyPlayer>();
             MyAPIGateway.Players.GetPlayers(temp, (pl) => pl.SteamUserId != me);
@@ -80,7 +80,7 @@ namespace avaness.GridSpawner.Networking
             data = PacketData.ToBinary(data, typeId);
 
             ulong me = 0;
-            if (MyAPIGateway.Session.Player != null)
+            if (MyAPIGateway.Session?.Player != null)
                 me = MyAPIGateway.Session.Player.SteamUserId;
             List<IMyPlayer> temp = new List<IMyPlayer>();
             MyAPIGateway.Players.GetPlayers(temp, (pl) => pl.SteamUserId != id && pl.SteamUserId != me);
@@ -108,8 +108,10 @@ namespace avaness.GridSpawner.Networking
                 bytes = data;
                 if (Constants.IsDedicated)
                     sender = 0;
-                else
+                else if(MyAPIGateway.Session?.Player != null)
                     sender = MyAPIGateway.Session.Player.SteamUserId;
+                else
+                    MyLog.Default.WriteLineAndConsole($"[Instant Projector] WARNING: Creating packet {id} with invalid sender address");
             }
 
             public static byte[] ToBinary(byte[] data, byte id)
